@@ -9,6 +9,9 @@ import Category from "./pages/Category";
 import SmartInventory from "./pages/SmartInventory";
 import LiveTracking from "./pages/LiveTracking";
 import StoreDashboard from "./pages/StoreDashboard";
+import Payment from "./pages/Payment";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import Cart from "./components/Cart";
 import NotFound from "./pages/NotFound";
 import AIChat from "./components/AIChat";
 
@@ -26,6 +29,9 @@ const App = () => (
           <Route path="/smart-inventory" element={<SmartInventory />} />
           <Route path="/live-tracking" element={<LiveTracking />} />
           <Route path="/store-dashboard" element={<StoreDashboard />} />
+          <Route path="/cart" element={<div>Cart Route - Connect with Cart Component</div>} />
+          <Route path="/payment" element={<Payment />} />
+          <Route path="/payment-success" element={<PaymentSuccess />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

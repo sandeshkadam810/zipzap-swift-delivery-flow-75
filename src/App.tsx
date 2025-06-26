@@ -6,7 +6,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Category from "./pages/Category";
+import SmartInventory from "./pages/SmartInventory";
+import LiveTracking from "./pages/LiveTracking";
+import StoreDashboard from "./pages/StoreDashboard";
 import NotFound from "./pages/NotFound";
+import AIChat from "./components/AIChat";
 
 const queryClient = new QueryClient();
 
@@ -19,9 +23,13 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/category/:categoryName" element={<Category />} />
+          <Route path="/smart-inventory" element={<SmartInventory />} />
+          <Route path="/live-tracking" element={<LiveTracking />} />
+          <Route path="/store-dashboard" element={<StoreDashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <AIChat />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

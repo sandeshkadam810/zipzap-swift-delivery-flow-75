@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 const GoogleMap = () => {
   const mapRef = useRef<HTMLDivElement>(null);
   const [apiKey, setApiKey] = useState('');
-  const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [map, setMap] = useState<any>(null);
 
   const initializeMap = () => {
     if (!window.google || !mapRef.current) return;
@@ -66,9 +66,11 @@ const GoogleMap = () => {
 
   if (!apiKey) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 rounded-lg">
-        <div className="text-center p-4">
-          <h3 className="text-lg font-semibold mb-2">Google Maps Integration</h3>
+      <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl border border-white/20">
+        <div className="text-center p-6 bg-white/80 backdrop-blur-sm rounded-xl shadow-lg">
+          <h3 className="text-xl font-bold mb-3 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            Google Maps Integration
+          </h3>
           <p className="text-sm text-gray-600 mb-4">
             Enter your Google Maps API key to enable location services
           </p>
@@ -77,7 +79,7 @@ const GoogleMap = () => {
             placeholder="Enter Google Maps API Key"
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
-            className="mb-2"
+            className="mb-3 border-purple-200 focus:border-purple-400"
           />
           <p className="text-xs text-gray-500">
             Get your API key from{' '}
@@ -85,7 +87,7 @@ const GoogleMap = () => {
               href="https://developers.google.com/maps/documentation/javascript/get-api-key"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 hover:underline"
+              className="text-purple-600 hover:underline font-medium"
             >
               Google Cloud Console
             </a>
@@ -95,7 +97,7 @@ const GoogleMap = () => {
     );
   }
 
-  return <div ref={mapRef} className="w-full h-full rounded-lg" />;
+  return <div ref={mapRef} className="w-full h-full rounded-2xl shadow-lg" />;
 };
 
 export default GoogleMap;

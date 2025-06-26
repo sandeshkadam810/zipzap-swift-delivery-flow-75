@@ -1,14 +1,15 @@
 
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const ProductCategories = () => {
   const categories = [
-    { name: "Groceries", image: "🛒", color: "from-green-400 to-green-600", items: "500+ items" },
-    { name: "Pharmacy", image: "💊", color: "from-red-400 to-red-600", items: "200+ items" },
-    { name: "Electronics", image: "📱", color: "from-blue-400 to-blue-600", items: "150+ items" },
-    { name: "Beauty", image: "💄", color: "from-pink-400 to-pink-600", items: "300+ items" },
-    { name: "Home & Garden", image: "🏡", color: "from-yellow-400 to-yellow-600", items: "250+ items" },
-    { name: "Pet Supplies", image: "🐕", color: "from-purple-400 to-purple-600", items: "100+ items" }
+    { name: "Groceries", image: "🛒", color: "from-green-400 to-green-600", items: "500+ items", slug: "groceries" },
+    { name: "Pharmacy", image: "💊", color: "from-red-400 to-red-600", items: "200+ items", slug: "pharmacy" },
+    { name: "Electronics", image: "📱", color: "from-blue-400 to-blue-600", items: "150+ items", slug: "electronics" },
+    { name: "Beauty", image: "💄", color: "from-pink-400 to-pink-600", items: "300+ items", slug: "beauty" },
+    { name: "Home & Garden", image: "🏡", color: "from-yellow-400 to-yellow-600", items: "250+ items", slug: "home-garden" },
+    { name: "Pet Supplies", image: "🐕", color: "from-purple-400 to-purple-600", items: "100+ items", slug: "pet-supplies" }
   ];
 
   return (
@@ -27,8 +28,9 @@ const ProductCategories = () => {
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
           {categories.map((category, index) => (
-            <div 
+            <Link 
               key={index}
+              to={`/category/${category.slug}`}
               className="group cursor-pointer"
             >
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:border-purple-200 transition-all duration-300 hover:transform hover:scale-105 hover:shadow-xl text-center">
@@ -44,7 +46,7 @@ const ProductCategories = () => {
                   {category.items}
                 </p>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>

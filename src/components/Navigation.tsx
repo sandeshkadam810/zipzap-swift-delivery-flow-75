@@ -1,8 +1,9 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Package, MapPin } from 'lucide-react';
+import { Package } from 'lucide-react';
 import AuthModal from './AuthModal';
+import LocationSelector from './LocationSelector';
 
 const Navigation = () => {
   const [showAuth, setShowAuth] = useState(false);
@@ -28,10 +29,7 @@ const Navigation = () => {
             </div>
             
             <div className="hidden md:flex items-center space-x-4">
-              <div className="flex items-center space-x-2 text-gray-600">
-                <MapPin className="h-4 w-4" />
-                <span className="text-sm">Deliver to: <strong>Select Location</strong></span>
-              </div>
+              <LocationSelector />
             </div>
 
             <div className="flex items-center space-x-3">

@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 const GoogleMap = () => {
   const mapRef = useRef<HTMLDivElement>(null);
   const [apiKey, setApiKey] = useState('');
-  const [map, setMap] = useState<any>(null);
+  const [map, setMap] = useState<google.maps.Map | null>(null);
 
   const initializeMap = () => {
     if (!window.google || !mapRef.current) return;

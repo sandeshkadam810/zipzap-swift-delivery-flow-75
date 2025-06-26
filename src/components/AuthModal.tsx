@@ -5,26 +5,74 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   mode: 'login' | 'signup';
   onModeChange: (mode: 'login' | 'signup') => void;
+  onAuthSuccess: (user: any) => void;
 }
 
-const AuthModal = ({ isOpen, onClose, mode, onModeChange }: AuthModalProps) => {
+const AuthModal = ({ isOpen, onClose, mode, onModeChange, onAuthSuccess }: AuthModalProps) => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     name: '',
     phone: ''
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Auth form submitted:', { mode, formData });
-    onClose();
+    setIsLoading(true);
+
+    // Simulate authentication
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Mock validation
+    if (mode === 'login') {
+      if (formData.email === 'user@example.com' && formData.password === 'password123') {
+        toast({
+          title: "Login Successful",
+          description: "Welcome back!",
+        });
+        onAuthSuccess({ email: formData.email, name: 'John Doe' });
+        onClose();
+      } else {
+        toast({
+          title: "Login Failed",
+          description: "Invalid credentials. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } else {
+      // Signup
+      if (formData.email && formData.password && formData.name && formData.phone) {
+        toast({
+          title: "Account Created",
+          description: "Your account has been created successfully!",
+        });
+        onAuthSuccess({ email: formData.email, name: formData.name });
+        onClose();
+      } else {
+        toast({
+          title: "Signup Failed",
+          description: "Please fill in all required fields.",
+          variant: "destructive",
+        });
+      }
+    }
+    setIsLoading(false);
+  };
+
+  const handleGoogleAuth = () => {
+    toast({
+      title: "Google Auth",
+      description: "Google authentication will be implemented with proper backend integration.",
+    });
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -100,8 +148,18 @@ const AuthModal = ({ isOpen, onClose, mode, onModeChange }: AuthModalProps) => {
           <Button 
             type="submit" 
             className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+            disabled={isLoading}
           >
-            {mode === 'login' ? 'Sign In' : 'Create Account'}
+            {isLoading ? 'Processing...' : (mode === 'login' ? 'Sign In' : 'Create Account')}
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            onClick={handleGoogleAuth}
+          >
+            Continue with Google
           </Button>
 
           <Separator className="bg-purple-100" />

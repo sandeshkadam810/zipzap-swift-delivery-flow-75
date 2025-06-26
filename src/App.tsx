@@ -14,6 +14,8 @@ import PaymentSuccess from "./pages/PaymentSuccess";
 import Cart from "./components/Cart";
 import NotFound from "./pages/NotFound";
 import AIChat from "./components/AIChat";
+import InventoryManage from "./pages/InventoryManage";
+import OrderTracking from "./pages/OrderTracking";
 
 const queryClient = new QueryClient();
 
@@ -27,7 +29,9 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/category/:categoryName" element={<Category />} />
           <Route path="/smart-inventory" element={<SmartInventory />} />
+          <Route path="/inventory-manage" element={<InventoryManage />} />
           <Route path="/live-tracking" element={<LiveTracking />} />
+          <Route path="/order-tracking" element={<OrderTracking />} />
           <Route path="/store-dashboard" element={<StoreDashboard />} />
           <Route path="/cart" element={<div>Cart Route - Connect with Cart Component</div>} />
           <Route path="/payment" element={<Payment />} />

@@ -17,6 +17,8 @@ export const useOrderManagement = () => {
 
   const placeOrderMutation = useMutation({
     mutationFn: async (orderData: PlaceOrderData) => {
+      console.log('Placing order with data:', orderData);
+      
       // Create order in database
       const { data: order, error } = await supabase
         .from('orders')
@@ -31,7 +33,12 @@ export const useOrderManagement = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating order:', error);
+        throw error;
+      }
+
+      console.log('Order created:', order);
 
       // Automatically assign to nearest store
       const assigned = await orderManagementService.assignOrderToStore(
@@ -40,9 +47,16 @@ export const useOrderManagement = () => {
       );
 
       if (!assigned) {
-        throw new Error('No store available in your area');
+        // Update order status to indicate no store available
+        await supabase
+          .from('orders')
+          .update({ status: 'cancelled' })
+          .eq('id', order.id);
+        
+        throw new Error('No store available in your area (within 7km radius). Please try again later.');
       }
 
+      console.log('Order assigned to store successfully');
       return order;
     },
     onSuccess: (order) => {
@@ -50,8 +64,10 @@ export const useOrderManagement = () => {
         title: "Order Placed Successfully!",
         description: `Order #${order.id.slice(-8)} has been assigned to the nearest store.`,
       });
+      console.log('Order placement successful:', order);
     },
     onError: (error: any) => {
+      console.error('Order placement failed:', error);
       toast({
         title: "Order Failed",
         description: error.message || "Failed to place order. Please try again.",

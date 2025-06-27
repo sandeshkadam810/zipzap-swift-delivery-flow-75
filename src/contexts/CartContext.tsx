@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Product } from '@/data/products';
 
 interface CartItem extends Product {
@@ -13,6 +13,7 @@ interface CartContextType {
   removeItem: (productId: number) => void;
   clearCart: () => void;
   getTotalItems: () => number;
+  getTotalAmount: () => number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -31,6 +32,23 @@ interface CartProviderProps {
 
 export const CartProvider = ({ children }: CartProviderProps) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+
+  // Load cart from localStorage on mount
+  useEffect(() => {
+    const savedCart = localStorage.getItem('zipzap-cart');
+    if (savedCart) {
+      try {
+        setCartItems(JSON.parse(savedCart));
+      } catch (error) {
+        console.error('Error loading cart from localStorage:', error);
+      }
+    }
+  }, []);
+
+  // Save cart to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('zipzap-cart', JSON.stringify(cartItems));
+  }, [cartItems]);
 
   const addToCart = (product: Product) => {
     setCartItems(prevItems => {
@@ -70,6 +88,10 @@ export const CartProvider = ({ children }: CartProviderProps) => {
     return cartItems.reduce((total, item) => total + item.quantity, 0);
   };
 
+  const getTotalAmount = () => {
+    return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+  };
+
   return (
     <CartContext.Provider
       value={{
@@ -79,6 +101,7 @@ export const CartProvider = ({ children }: CartProviderProps) => {
         removeItem,
         clearCart,
         getTotalItems,
+        getTotalAmount,
       }}
     >
       {children}

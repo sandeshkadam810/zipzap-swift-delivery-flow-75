@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 interface Location {
@@ -56,8 +55,20 @@ export class OrderManagementService {
     if (typeof location === 'object' && location !== null && 'lat' in location && 'lng' in location) {
       return location as Location;
     }
+    // Try to parse if it's a string representation
+    if (typeof location === 'string') {
+      try {
+        const parsed = JSON.parse(location);
+        if (parsed && typeof parsed === 'object' && 'lat' in parsed && 'lng' in parsed) {
+          return parsed as Location;
+        }
+      } catch (e) {
+        console.error('Error parsing location string:', e);
+      }
+    }
     // Fallback to default location if parsing fails
-    return { lat: 0, lng: 0 };
+    console.warn('Could not parse location, using default:', location);
+    return { lat: 28.6139, lng: 77.2090 }; // Delhi coordinates as fallback
   }
 
   // Helper to parse items from database Json type
@@ -79,19 +90,29 @@ export class OrderManagementService {
   // Find nearest store within 7km radius
   async findNearestStore(customerLocation: Location): Promise<Store | null> {
     try {
+      console.log('Looking for nearest store to:', customerLocation);
+      
       const { data: stores, error } = await supabase
         .from('stores')
         .select('*')
         .eq('is_active', true);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching stores:', error);
+        throw error;
+      }
+
+      console.log('Found stores:', stores?.length || 0);
 
       let nearestStore: Store | null = null;
       let minDistance = Infinity;
 
-      for (const store of stores) {
+      for (const store of stores || []) {
         const storeLocation = this.parseLocation(store.location);
         const distance = this.calculateDistance(customerLocation, storeLocation);
+        
+        console.log(`Store ${store.name} is ${distance.toFixed(2)}km away`);
+        
         if (distance <= 7 && distance < minDistance) {
           minDistance = distance;
           nearestStore = {
@@ -99,6 +120,12 @@ export class OrderManagementService {
             location: storeLocation
           };
         }
+      }
+
+      if (nearestStore) {
+        console.log(`Nearest store found: ${nearestStore.name} at ${minDistance.toFixed(2)}km`);
+      } else {
+        console.log('No store found within 7km radius');
       }
 
       return nearestStore;
@@ -111,11 +138,16 @@ export class OrderManagementService {
   // Assign order to nearest store
   async assignOrderToStore(orderId: string, customerLocation: Location): Promise<boolean> {
     try {
+      console.log('Assigning order to store:', orderId, customerLocation);
+      
       const nearestStore = await this.findNearestStore(customerLocation);
       
       if (!nearestStore) {
-        throw new Error('No store found within 7km radius');
+        console.error('No store found within 7km radius');
+        return false;
       }
+
+      console.log('Assigning order to store:', nearestStore.name);
 
       const { error } = await supabase
         .from('orders')
@@ -126,11 +158,15 @@ export class OrderManagementService {
         })
         .eq('id', orderId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating order with store assignment:', error);
+        throw error;
+      }
 
       // Notify store (you can implement push notifications here)
       await this.notifyStore(nearestStore.id, orderId);
 
+      console.log('Order successfully assigned to store');
       return true;
     } catch (error) {
       console.error('Error assigning order to store:', error);

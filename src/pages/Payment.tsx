@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { useCart } from '@/contexts/CartContext';
+import useOrderManagement from '@/hooks/useOrderManagement';
 import CustomerNavigation from '@/components/CustomerNavigation';
 
 const Payment = () => {
@@ -17,8 +19,35 @@ const Payment = () => {
     name: ''
   });
   const [upiId, setUpiId] = useState('');
+  const [customerAddress, setCustomerAddress] = useState('123 Main Street, Sector 15, New Delhi, 110001');
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { cartItems, getTotalAmount, clearCart } = useCart();
+  const { placeOrder, isPlacingOrder } = useOrderManagement();
+
+  // Get user location
+  React.useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+          // Default to Delhi coordinates if location access denied
+          setUserLocation({ lat: 28.6139, lng: 77.2090 });
+        }
+      );
+    } else {
+      // Default location if geolocation not supported
+      setUserLocation({ lat: 28.6139, lng: 77.2090 });
+    }
+  }, []);
 
   const paymentMethods = [
     { id: 'cod', name: 'Cash on Delivery', icon: Truck, description: 'Pay when your order arrives' },
@@ -27,11 +56,33 @@ const Payment = () => {
     { id: 'netbanking', name: 'Net Banking', icon: Building, description: 'All major banks supported' }
   ];
 
+  const subtotal = getTotalAmount();
+  const deliveryFee = subtotal > 500 ? 0 : 29;
+  const total = subtotal + deliveryFee;
+
   const handlePayment = () => {
     if (!selectedPayment) {
       toast({
         title: "Select Payment Method",
         description: "Please choose a payment method to continue.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (cartItems.length === 0) {
+      toast({
+        title: "Empty Cart",
+        description: "Please add items to cart before placing order.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!userLocation) {
+      toast({
+        title: "Location Required",
+        description: "Please allow location access to place order.",
         variant: "destructive",
       });
       return;
@@ -55,22 +106,54 @@ const Payment = () => {
       return;
     }
 
-    // Simulate payment processing
+    // Process payment and place order
     toast({
       title: "Processing Payment",
       description: "Please wait while we process your payment...",
     });
 
+    // Simulate payment processing
     setTimeout(() => {
+      placeOrder({
+        customerLocation: userLocation,
+        customerAddress: customerAddress,
+        items: cartItems.map(item => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          brand: item.brand,
+          unit: item.unit
+        })),
+        totalAmount: total,
+        customerId: 'temp-customer-id' // In real app, get from auth
+      });
+
+      clearCart();
       navigate('/payment-success');
     }, 2000);
   };
 
+  if (cartItems.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
+        <CustomerNavigation onSwitchInterface={() => {}} />
+        <div className="max-w-md mx-auto pt-20 text-center p-4">
+          <h2 className="text-2xl font-bold text-gray-600 mb-4">Cart is empty</h2>
+          <p className="text-gray-500 mb-8">Add some items to proceed with payment</p>
+          <Link to="/customer-home">
+            <Button className="bg-gradient-to-r from-purple-600 to-blue-600">
+              Continue Shopping
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
-      <CustomerNavigation onSwitchInterface={function (): void {
-        throw new Error('Function not implemented.');
-      } } />
+      <CustomerNavigation onSwitchInterface={() => {}} />
       
       <div className="max-w-4xl mx-auto p-4 pt-8">
         <div className="flex items-center mb-6">
@@ -120,7 +203,7 @@ const Payment = () => {
               </CardContent>
             </Card>
 
-            {/* Payment Details */}
+            {/* Payment Details Forms */}
             {selectedPayment === 'card' && (
               <Card className="bg-white/80 backdrop-blur-sm border-white/20">
                 <CardHeader>
@@ -198,35 +281,50 @@ const Payment = () => {
                 <CardTitle>Order Summary</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Cart Items */}
+                <div className="max-h-40 overflow-y-auto space-y-2">
+                  {cartItems.map((item) => (
+                    <div key={item.id} className="flex justify-between items-center text-sm">
+                      <span>{item.name} x {item.quantity}</span>
+                      <span>₹{item.price * item.quantity}</span>
+                    </div>
+                  ))}
+                </div>
+                
+                <hr />
+                
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span>₹1,299</span>
+                  <span>₹{subtotal}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Delivery Fee</span>
-                  <span className="text-green-600">FREE</span>
-                </div>
-                <div className="flex justify-between text-green-600">
-                  <span>Discount (SAVE10)</span>
-                  <span>-₹130</span>
+                  <span>{deliveryFee === 0 ? 'FREE' : `₹${deliveryFee}`}</span>
                 </div>
                 <hr />
                 <div className="flex justify-between font-bold text-lg">
                   <span>Total Amount</span>
-                  <span>₹1,169</span>
+                  <span>₹{total}</span>
                 </div>
                 
                 <div className="bg-gray-50 p-3 rounded-lg text-sm">
                   <p className="font-semibold mb-2">Delivery Address:</p>
-                  <p>123 Main Street, Sector 15</p>
-                  <p>New Delhi, 110001</p>
+                  <textarea
+                    className="w-full p-2 border rounded resize-none"
+                    rows={3}
+                    value={customerAddress}
+                    onChange={(e) => setCustomerAddress(e.target.value)}
+                    placeholder="Enter your delivery address"
+                  />
                 </div>
 
                 <Button 
                   onClick={handlePayment}
                   className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                  disabled={isPlacingOrder}
                 >
-                  {selectedPayment === 'cod' ? 'Place Order' : `Pay ₹1,169`}
+                  {isPlacingOrder ? 'Processing...' : 
+                   selectedPayment === 'cod' ? 'Place Order' : `Pay ₹${total}`}
                 </Button>
 
                 <p className="text-xs text-gray-600 text-center">

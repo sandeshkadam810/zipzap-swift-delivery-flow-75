@@ -151,6 +151,3 @@ zipzap-delivery-app/
 - A/B testing support for UI experiments
 - PWA support for installability and offline caching
 
-## License
-
-This project is licensed under the MIT License. See the LICENSE file for details.

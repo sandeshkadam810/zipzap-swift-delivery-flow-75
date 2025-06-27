@@ -47,14 +47,31 @@ const DeliveryMonitoring = ({ storeId }: DeliveryMonitoringProps) => {
           )
         `)
         .eq('store_id', storeId)
-        .in('status', ['assigned_to_rider', 'picked', 'en_route'])
+        .in('status', ['picked', 'delivered'])
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as ActiveDelivery[];
+      
+      // Map the data to our ActiveDelivery interface
+      return data.map(order => ({
+        ...order,
+        customer_location: parseLocation(order.customer_location),
+        delivery_executive: {
+          ...order.delivery_executives,
+          current_location: parseLocation(order.delivery_executives?.current_location)
+        }
+      })) as ActiveDelivery[];
     },
     refetchInterval: 10000, // Refresh every 10 seconds
   });
+
+  // Helper function to parse location
+  const parseLocation = (location: unknown): { lat: number; lng: number } => {
+    if (typeof location === 'object' && location !== null && 'lat' in location && 'lng' in location) {
+      return location as { lat: number; lng: number };
+    }
+    return { lat: 0, lng: 0 };
+  };
 
   // Real-time updates
   useEffect(() => {
@@ -81,9 +98,7 @@ const DeliveryMonitoring = ({ storeId }: DeliveryMonitoringProps) => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'assigned_to_rider': return 'bg-blue-100 text-blue-800';
       case 'picked': return 'bg-yellow-100 text-yellow-800';
-      case 'en_route': return 'bg-purple-100 text-purple-800';
       case 'delivered': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -91,9 +106,8 @@ const DeliveryMonitoring = ({ storeId }: DeliveryMonitoringProps) => {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'assigned_to_rider': return <User className="h-4 w-4" />;
       case 'picked': return <Truck className="h-4 w-4" />;
-      case 'en_route': return <Navigation className="h-4 w-4" />;
+      case 'delivered': return <Navigation className="h-4 w-4" />;
       default: return <MapPin className="h-4 w-4" />;
     }
   };
@@ -152,7 +166,7 @@ const DeliveryMonitoring = ({ storeId }: DeliveryMonitoringProps) => {
                   <div className="text-right">
                     <p className="text-sm text-gray-600">ETA</p>
                     <p className="font-semibold text-green-600">
-                      {calculateETA(delivery.estimated_delivery_time)}
+                      {delivery.estimated_delivery_time ? calculateETA(delivery.estimated_delivery_time) : 'N/A'}
                     </p>
                   </div>
                 </div>
@@ -160,26 +174,28 @@ const DeliveryMonitoring = ({ storeId }: DeliveryMonitoringProps) => {
 
               <CardContent className="space-y-4">
                 {/* Delivery Executive Info */}
-                <div className="bg-blue-50 rounded-lg p-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
-                        {delivery.delivery_executive.name.charAt(0)}
+                {delivery.delivery_executive && (
+                  <div className="bg-blue-50 rounded-lg p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
+                          {delivery.delivery_executive.name.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="font-semibold">{delivery.delivery_executive.name}</p>
+                          <p className="text-sm text-gray-600 flex items-center">
+                            <Phone className="h-3 w-3 mr-1" />
+                            {delivery.delivery_executive.phone}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-semibold">{delivery.delivery_executive.name}</p>
-                        <p className="text-sm text-gray-600 flex items-center">
-                          <Phone className="h-3 w-3 mr-1" />
-                          {delivery.delivery_executive.phone}
-                        </p>
-                      </div>
+                      <Button size="sm" variant="outline">
+                        <Phone className="h-4 w-4 mr-1" />
+                        Call
+                      </Button>
                     </div>
-                    <Button size="sm" variant="outline">
-                      <Phone className="h-4 w-4 mr-1" />
-                      Call
-                    </Button>
                   </div>
-                </div>
+                )}
 
                 {/* Order Details */}
                 <div className="space-y-2">

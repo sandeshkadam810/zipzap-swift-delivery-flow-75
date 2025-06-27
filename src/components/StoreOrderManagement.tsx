@@ -79,7 +79,7 @@ const StoreOrderManagement = ({ storeId }: StoreOrderManagementProps) => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'assigned_to_store': return 'bg-yellow-100 text-yellow-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
       case 'preparing': return 'bg-blue-100 text-blue-800';
       case 'ready': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
@@ -215,7 +215,7 @@ const StoreOrderManagement = ({ storeId }: StoreOrderManagementProps) => {
 
                   {/* Action Buttons */}
                   <div className="flex space-x-3 pt-4">
-                    {order.status === 'assigned_to_store' && (
+                    {order.status === 'pending' && (
                       <Button 
                         className="flex-1 bg-blue-600 hover:bg-blue-700"
                         onClick={() => {

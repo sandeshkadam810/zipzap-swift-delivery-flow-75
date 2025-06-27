@@ -30,10 +30,11 @@ interface Order {
   customer_address: string;
   items: any[];
   total_amount: number;
-  status: 'pending' | 'assigned_to_store' | 'preparing' | 'ready' | 'assigned_to_rider' | 'picked' | 'delivered';
+  status: 'pending' | 'preparing' | 'ready' | 'picked' | 'delivered' | 'cancelled';
   store_id?: string;
   delivery_exec_id?: string;
   estimated_delivery_time?: string;
+  created_at: string;
 }
 
 export class OrderManagementService {
@@ -50,6 +51,15 @@ export class OrderManagementService {
     return R * c;
   }
 
+  // Helper to parse location from database
+  private parseLocation(location: unknown): Location {
+    if (typeof location === 'object' && location !== null && 'lat' in location && 'lng' in location) {
+      return location as Location;
+    }
+    // Fallback to default location if parsing fails
+    return { lat: 0, lng: 0 };
+  }
+
   // Find nearest store within 7km radius
   async findNearestStore(customerLocation: Location): Promise<Store | null> {
     try {
@@ -64,10 +74,14 @@ export class OrderManagementService {
       let minDistance = Infinity;
 
       for (const store of stores) {
-        const distance = this.calculateDistance(customerLocation, store.location);
+        const storeLocation = this.parseLocation(store.location);
+        const distance = this.calculateDistance(customerLocation, storeLocation);
         if (distance <= 7 && distance < minDistance) {
           minDistance = distance;
-          nearestStore = store;
+          nearestStore = {
+            ...store,
+            location: storeLocation
+          };
         }
       }
 
@@ -91,22 +105,12 @@ export class OrderManagementService {
         .from('orders')
         .update({ 
           store_id: nearestStore.id, 
-          status: 'assigned_to_store',
+          status: 'pending', // Use valid status
           updated_at: new Date().toISOString()
         })
         .eq('id', orderId);
 
       if (error) throw error;
-
-      // Create order tracking entry
-      await supabase
-        .from('order_tracking')
-        .insert({
-          order_id: orderId,
-          status: 'assigned_to_store',
-          notes: `Order assigned to ${nearestStore.name}`,
-          location: nearestStore.location
-        });
 
       // Notify store (you can implement push notifications here)
       await this.notifyStore(nearestStore.id, orderId);
@@ -133,10 +137,14 @@ export class OrderManagementService {
       let minDistance = Infinity;
 
       for (const exec of executives) {
-        const distance = this.calculateDistance(exec.current_location, customerLocation);
+        const execLocation = this.parseLocation(exec.current_location);
+        const distance = this.calculateDistance(execLocation, customerLocation);
         if (distance < minDistance) {
           minDistance = distance;
-          nearestExec = exec;
+          nearestExec = {
+            ...exec,
+            current_location: execLocation
+          };
         }
       }
 
@@ -165,7 +173,7 @@ export class OrderManagementService {
         .from('orders')
         .update({ 
           delivery_exec_id: nearestExec.id,
-          status: 'assigned_to_rider',
+          status: 'picked', // Use valid status
           estimated_delivery_time: new Date(Date.now() + estimatedTime * 60000).toISOString(),
           updated_at: new Date().toISOString()
         })
@@ -179,16 +187,6 @@ export class OrderManagementService {
         .update({ is_available: false })
         .eq('id', nearestExec.id);
 
-      // Create tracking entry
-      await supabase
-        .from('order_tracking')
-        .insert({
-          order_id: orderId,
-          status: 'assigned_to_rider',
-          notes: `Assigned to ${nearestExec.name}. ETA: ${estimatedTime} minutes`,
-          location: nearestExec.current_location
-        });
-
       return true;
     } catch (error) {
       console.error('Error assigning order to delivery executive:', error);
@@ -201,12 +199,6 @@ export class OrderManagementService {
     // In a real implementation, you would send push notifications
     // For now, we'll just log it
     console.log(`🔔 URGENT: New order ${orderId} assigned to store ${storeId}`);
-    
-    // You could integrate with services like:
-    // - Firebase Cloud Messaging
-    // - WebSocket notifications
-    // - Email notifications
-    // - SMS alerts
   }
 
   // Get store's pending orders sorted by priority
@@ -216,13 +208,18 @@ export class OrderManagementService {
         .from('orders')
         .select('*')
         .eq('store_id', storeId)
-        .in('status', ['assigned_to_store', 'preparing'])
+        .in('status', ['pending', 'preparing'])
         .order('created_at', { ascending: true });
 
       if (error) throw error;
 
+      const mappedOrders: Order[] = orders.map(order => ({
+        ...order,
+        customer_location: this.parseLocation(order.customer_location)
+      }));
+
       // Sort by priority: high-value orders first, then by time
-      return orders.sort((a, b) => {
+      return mappedOrders.sort((a, b) => {
         if (a.total_amount !== b.total_amount) {
           return b.total_amount - a.total_amount; // Higher amount first
         }
@@ -257,16 +254,8 @@ export class OrderManagementService {
       if (updateError) throw updateError;
 
       // Auto-assign to delivery executive
-      await this.assignOrderToDeliveryExecutive(orderId, order.store_id, order.customer_location);
-
-      // Create tracking entry
-      await supabase
-        .from('order_tracking')
-        .insert({
-          order_id: orderId,
-          status: 'ready',
-          notes: 'Order prepared and ready for pickup'
-        });
+      const customerLocation = this.parseLocation(order.customer_location);
+      await this.assignOrderToDeliveryExecutive(orderId, order.store_id, customerLocation);
 
       return true;
     } catch (error) {

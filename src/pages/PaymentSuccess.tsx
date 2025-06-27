@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { CheckCircle, Home, Package, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import Navigation from '@/components/Navigation';
+import CustomerNavigation from '@/components/CustomerNavigation';
 
 const PaymentSuccess = () => {
   const orderDetails = {
@@ -17,7 +17,9 @@ const PaymentSuccess = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
-      <Navigation />
+      <CustomerNavigation onSwitchInterface={function (): void {
+        throw new Error('Function not implemented.');
+      } } />
       
       <div className="max-w-2xl mx-auto p-4 pt-8">
         <div className="text-center mb-8">

@@ -1,5 +1,6 @@
-
-import React, { useState } from 'react';
+import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase"; // adjust if your path differs
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Package, BarChart3, MapPin, Store, Settings, Users } from 'lucide-react';
@@ -12,7 +13,7 @@ interface StoreNavigationProps {
 const StoreNavigation = ({ onSwitchInterface }: StoreNavigationProps) => {
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
-  const [user, setUser] = useState<any>(null);
+  const navigate = useNavigate();
 
   const handleAuthClick = (mode: 'login' | 'signup') => {
     setAuthMode(mode);
@@ -24,9 +25,33 @@ const StoreNavigation = ({ onSwitchInterface }: StoreNavigationProps) => {
     setShowAuth(false);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
   };
+
+
+const [user, setUser] = useState<any>(null);
+
+useEffect(() => {
+  const getUser = async () => {
+    const { data, error } = await supabase.auth.getUser();
+    if (data?.user) {
+      setUser(data.user);
+    }
+  };
+  getUser();
+
+  // Optional: subscribe to auth changes to auto-update user state
+  const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+    setUser(session?.user || null);
+  });
+
+  return () => {
+    listener?.subscription.unsubscribe();
+  };
+}, []);
+
 
   return (
     <>
@@ -41,24 +66,24 @@ const StoreNavigation = ({ onSwitchInterface }: StoreNavigationProps) => {
                 ZipZap Store
               </span>
             </Link>
-            
+
             <div className="hidden md:flex items-center space-x-6">
-              <Link 
-                to="/store-dashboard" 
+              <Link
+                to="/store-dashboard"
                 className="flex items-center space-x-1 text-gray-600 hover:text-purple-600 transition-colors font-medium"
               >
                 <BarChart3 className="h-4 w-4" />
                 <span>Dashboard</span>
               </Link>
-              <Link 
-                to="/smart-inventory" 
+              <Link
+                to="/smart-inventory"
                 className="flex items-center space-x-1 text-gray-600 hover:text-purple-600 transition-colors font-medium"
               >
                 <Package className="h-4 w-4" />
                 <span>Inventory</span>
               </Link>
-              <Link 
-                to="/order-tracking" 
+              <Link
+                to="/order-tracking"
                 className="flex items-center space-x-1 text-gray-600 hover:text-purple-600 transition-colors font-medium"
               >
                 <MapPin className="h-4 w-4" />
@@ -67,20 +92,23 @@ const StoreNavigation = ({ onSwitchInterface }: StoreNavigationProps) => {
             </div>
 
             <div className="flex items-center space-x-3">
-              <Button 
-                variant="ghost" 
-                onClick={onSwitchInterface}
+              <Button
+                variant="ghost"
+                onClick={() => navigate('/store-dashboard')}
                 className="hover:bg-purple-50 hover:text-purple-600 transition-all text-sm"
               >
-                Switch to Customer
+                Home
               </Button>
-              
+
               {user ? (
                 <>
                   <span className="text-gray-600">Welcome, {user.name}</span>
-                  <Button 
-                    variant="ghost" 
-                    onClick={handleLogout}
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      handleLogout();
+                      navigate('/');
+                    }}
                     className="hover:bg-purple-50 hover:text-purple-600 transition-all"
                   >
                     Logout
@@ -88,14 +116,14 @@ const StoreNavigation = ({ onSwitchInterface }: StoreNavigationProps) => {
                 </>
               ) : (
                 <>
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     onClick={() => handleAuthClick('login')}
                     className="hover:bg-purple-50 hover:text-purple-600 transition-all"
                   >
                     Login
                   </Button>
-                  <Button 
+                  <Button
                     onClick={() => handleAuthClick('signup')}
                     className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg hover:shadow-xl transition-all"
                   >
@@ -108,9 +136,9 @@ const StoreNavigation = ({ onSwitchInterface }: StoreNavigationProps) => {
         </div>
       </nav>
 
-      <AuthModal 
-        isOpen={showAuth} 
-        onClose={() => setShowAuth(false)} 
+      <AuthModal
+        isOpen={showAuth}
+        onClose={() => setShowAuth(false)}
         mode={authMode}
         onModeChange={setAuthMode}
         onAuthSuccess={handleAuthSuccess}

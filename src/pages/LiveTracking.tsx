@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import Navigation from '@/components/Navigation';
+import CustomerNavigation from '@/components/CustomerNavigation';
 import GoogleMap from '@/components/GoogleMap';
 import { MapPin, Clock, Truck, CheckCircle, Navigation as NavigationIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -57,7 +57,9 @@ const LiveTracking = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
-      <Navigation />
+      <CustomerNavigation onSwitchInterface={function (): void {
+        throw new Error('Function not implemented.');
+      } } />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">

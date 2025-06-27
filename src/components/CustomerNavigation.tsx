@@ -1,11 +1,16 @@
 
-import React, { useState } from 'react';
+
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Package, MapPin, ShoppingCart, Menu, X } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import AuthModal from './AuthModal';
 import LocationSelector from './LocationSelector';
+import { useNavigate } from "react-router-dom";
+import { supabase } from '@/lib/supabase';
+import { useEffect, useState } from "react";
+
+
 
 interface CustomerNavigationProps {
   onSwitchInterface: () => void;
@@ -14,8 +19,8 @@ interface CustomerNavigationProps {
 const CustomerNavigation = ({ onSwitchInterface }: CustomerNavigationProps) => {
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
-  const [user, setUser] = useState<any>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
   const { getTotalItems } = useCart();
 
   const handleAuthClick = (mode: 'login' | 'signup') => {
@@ -28,11 +33,35 @@ const CustomerNavigation = ({ onSwitchInterface }: CustomerNavigationProps) => {
     setShowAuth(false);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
   };
-
   const totalItems = getTotalItems();
+
+
+
+const [user, setUser] = useState<any>(null);
+
+useEffect(() => {
+  const getUser = async () => {
+    const { data, error } = await supabase.auth.getUser();
+    if (data?.user) {
+      setUser(data.user);
+    }
+  };
+  getUser();
+
+  // Optional: subscribe to auth changes to auto-update user state
+  const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+    setUser(session?.user || null);
+  });
+
+  return () => {
+    listener?.subscription.unsubscribe();
+  };
+}, []);
+
 
   return (
     <>
@@ -47,17 +76,17 @@ const CustomerNavigation = ({ onSwitchInterface }: CustomerNavigationProps) => {
                 ZipZap Customer
               </span>
             </Link>
-            
+
             <div className="hidden md:flex items-center space-x-6">
-              <Link 
-                to="/live-tracking" 
+              <Link
+                to="/live-tracking"
                 className="flex items-center space-x-1 text-gray-600 hover:text-blue-600 transition-colors font-medium"
               >
                 <MapPin className="h-4 w-4" />
                 <span>Track Order</span>
               </Link>
-              <Link 
-                to="/cart" 
+              <Link
+                to="/cart"
                 className="flex items-center space-x-1 text-gray-600 hover:text-blue-600 transition-colors font-medium relative"
               >
                 <ShoppingCart className="h-4 w-4" />
@@ -84,20 +113,24 @@ const CustomerNavigation = ({ onSwitchInterface }: CustomerNavigationProps) => {
                 </Button>
               </Link>
 
-              <Button 
-                variant="ghost" 
-                onClick={onSwitchInterface}
-                className="hover:bg-blue-50 hover:text-blue-600 transition-all text-sm"
+              <Button
+                variant="ghost"
+                onClick={() => navigate('/customer-home')}
+                className="hover:bg-purple-50 hover:text-purple-600 transition-all text-sm"
               >
-                Switch to Store
+                Home
               </Button>
-              
+
               {user ? (
                 <>
                   <span className="text-gray-600 hidden sm:inline">Welcome, {user.name}</span>
-                  <Button 
-                    variant="ghost" 
-                    onClick={handleLogout}
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      handleLogout();
+                      navigate('/');
+                    }}
+
                     className="hover:bg-blue-50 hover:text-blue-600 transition-all"
                   >
                     Logout
@@ -105,14 +138,14 @@ const CustomerNavigation = ({ onSwitchInterface }: CustomerNavigationProps) => {
                 </>
               ) : (
                 <>
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     onClick={() => handleAuthClick('login')}
                     className="hover:bg-blue-50 hover:text-blue-600 transition-all"
                   >
                     Login
                   </Button>
-                  <Button 
+                  <Button
                     onClick={() => handleAuthClick('signup')}
                     className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 shadow-lg hover:shadow-xl transition-all"
                   >
@@ -125,9 +158,9 @@ const CustomerNavigation = ({ onSwitchInterface }: CustomerNavigationProps) => {
         </div>
       </nav>
 
-      <AuthModal 
-        isOpen={showAuth} 
-        onClose={() => setShowAuth(false)} 
+      <AuthModal
+        isOpen={showAuth}
+        onClose={() => setShowAuth(false)}
         mode={authMode}
         onModeChange={setAuthMode}
         onAuthSuccess={handleAuthSuccess}

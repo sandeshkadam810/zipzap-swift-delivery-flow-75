@@ -5,7 +5,7 @@ import { ArrowLeft, Search, Plus, Edit3, Trash2, Package, AlertTriangle } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import Navigation from '@/components/Navigation';
+import StoreNavigation from '@/components/StoreNavigation';
 
 const InventoryManage = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -36,7 +36,9 @@ const InventoryManage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
-      <Navigation />
+      <StoreNavigation onSwitchInterface={function (): void {
+        throw new Error('Function not implemented.');
+      } }/>
       
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex items-center mb-6">

@@ -4,7 +4,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Minus, ShoppingCart, Star, Search, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import Navigation from '@/components/Navigation';
+import CustomerNavigation from '@/components/CustomerNavigation';
 import { getCategoryProducts, Product } from '@/data/products';
 
 interface CartItem extends Product {
@@ -79,7 +79,9 @@ const Category = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
-      <Navigation />
+      <CustomerNavigation onSwitchInterface={function (): void {
+        throw new Error('Function not implemented.');
+      } } />
       
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex items-center mb-6">

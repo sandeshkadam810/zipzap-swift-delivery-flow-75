@@ -17,6 +17,7 @@ import NotFound from "./pages/NotFound";
 import AIChat from "./components/AIChat";
 import InventoryManage from "./pages/InventoryManage";
 import OrderTracking from "./pages/OrderTracking";
+import CustomerHome from "@/pages/CustomerHome";
 
 const queryClient = new QueryClient();
 
@@ -37,7 +38,9 @@ const App = () => (
             <Route path="/store-dashboard" element={<StoreDashboard />} />
             <Route path="/cart" element={<CartPage />} />
             <Route path="/payment" element={<Payment />} />
+            <Route path="/customer-home" element={<CustomerHome />} />
             <Route path="/payment-success" element={<PaymentSuccess />} />
+            <Route path="/" element={<Index />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

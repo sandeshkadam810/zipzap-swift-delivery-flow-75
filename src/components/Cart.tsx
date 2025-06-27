@@ -72,7 +72,7 @@ const Cart: React.FC<CartProps> = ({ cartItems, updateQuantity, removeItem }) =>
           <ShoppingCart className="w-24 h-24 mx-auto text-gray-300 mb-6" />
           <h2 className="text-2xl font-bold text-gray-600 mb-4">Your cart is empty</h2>
           <p className="text-gray-500 mb-8">Add some items to get started</p>
-          <Link to="/">
+          <Link to="/customer-home">
             <Button className="bg-gradient-to-r from-purple-600 to-blue-600">
               Continue Shopping
             </Button>

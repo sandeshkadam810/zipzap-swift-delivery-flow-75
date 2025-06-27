@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Package, MapPin, ShoppingCart } from 'lucide-react';
+import { Package, MapPin, ShoppingCart, Menu, X } from 'lucide-react';
+import { useCart } from '@/contexts/CartContext';
 import AuthModal from './AuthModal';
 import LocationSelector from './LocationSelector';
 
@@ -14,6 +15,8 @@ const CustomerNavigation = ({ onSwitchInterface }: CustomerNavigationProps) => {
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [user, setUser] = useState<any>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { getTotalItems } = useCart();
 
   const handleAuthClick = (mode: 'login' | 'signup') => {
     setAuthMode(mode);
@@ -28,6 +31,8 @@ const CustomerNavigation = ({ onSwitchInterface }: CustomerNavigationProps) => {
   const handleLogout = () => {
     setUser(null);
   };
+
+  const totalItems = getTotalItems();
 
   return (
     <>
@@ -53,15 +58,32 @@ const CustomerNavigation = ({ onSwitchInterface }: CustomerNavigationProps) => {
               </Link>
               <Link 
                 to="/cart" 
-                className="flex items-center space-x-1 text-gray-600 hover:text-blue-600 transition-colors font-medium"
+                className="flex items-center space-x-1 text-gray-600 hover:text-blue-600 transition-colors font-medium relative"
               >
                 <ShoppingCart className="h-4 w-4" />
                 <span>Cart</span>
+                {totalItems > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {totalItems}
+                  </span>
+                )}
               </Link>
               <LocationSelector />
             </div>
 
             <div className="flex items-center space-x-3">
+              {/* Mobile Cart Button */}
+              <Link to="/cart" className="md:hidden relative">
+                <Button variant="ghost" size="sm">
+                  <ShoppingCart className="h-5 w-5" />
+                  {totalItems > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                      {totalItems}
+                    </span>
+                  )}
+                </Button>
+              </Link>
+
               <Button 
                 variant="ghost" 
                 onClick={onSwitchInterface}
@@ -72,7 +94,7 @@ const CustomerNavigation = ({ onSwitchInterface }: CustomerNavigationProps) => {
               
               {user ? (
                 <>
-                  <span className="text-gray-600">Welcome, {user.name}</span>
+                  <span className="text-gray-600 hidden sm:inline">Welcome, {user.name}</span>
                   <Button 
                     variant="ghost" 
                     onClick={handleLogout}

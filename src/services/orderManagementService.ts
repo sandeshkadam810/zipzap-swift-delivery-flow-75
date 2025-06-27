@@ -60,6 +60,22 @@ export class OrderManagementService {
     return { lat: 0, lng: 0 };
   }
 
+  // Helper to parse items from database Json type
+  private parseItems(items: unknown): any[] {
+    if (Array.isArray(items)) {
+      return items;
+    }
+    if (typeof items === 'string') {
+      try {
+        const parsed = JSON.parse(items);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  }
+
   // Find nearest store within 7km radius
   async findNearestStore(customerLocation: Location): Promise<Store | null> {
     try {
@@ -105,7 +121,7 @@ export class OrderManagementService {
         .from('orders')
         .update({ 
           store_id: nearestStore.id, 
-          status: 'pending', // Use valid status
+          status: 'pending',
           updated_at: new Date().toISOString()
         })
         .eq('id', orderId);
@@ -173,7 +189,7 @@ export class OrderManagementService {
         .from('orders')
         .update({ 
           delivery_exec_id: nearestExec.id,
-          status: 'picked', // Use valid status
+          status: 'picked',
           estimated_delivery_time: new Date(Date.now() + estimatedTime * 60000).toISOString(),
           updated_at: new Date().toISOString()
         })
@@ -215,7 +231,9 @@ export class OrderManagementService {
 
       const mappedOrders: Order[] = orders.map(order => ({
         ...order,
-        customer_location: this.parseLocation(order.customer_location)
+        customer_location: this.parseLocation(order.customer_location),
+        items: this.parseItems(order.items),
+        created_at: order.created_at || new Date().toISOString()
       }));
 
       // Sort by priority: high-value orders first, then by time

@@ -1,45 +1,49 @@
-
 import React, { useState, useEffect } from 'react';
 import CustomerNavigation from '@/components/CustomerNavigation';
 import GoogleMap from '@/components/GoogleMap';
 import { MapPin, Clock, Truck, CheckCircle, Navigation as NavigationIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/lib/supabase';
 
 const LiveTracking = () => {
-  const [orders, setOrders] = useState([
-    {
-      id: 'ZZ001',
-      customer: 'John Doe',
-      status: 'picked',
-      deliveryTime: '12 mins',
-      items: 8,
-      location: { lat: 28.6139, lng: 77.2090 },
-      rider: 'Rahul Kumar'
-    },
-    {
-      id: 'ZZ002',
-      customer: 'Sarah Wilson',
-      status: 'preparing',
-      deliveryTime: '18 mins',
-      items: 5,
-      location: { lat: 28.6289, lng: 77.2165 },
-      rider: 'Amit Singh'
-    },
-    {
-      id: 'ZZ003',
-      customer: 'Mike Johnson',
-      status: 'delivered',
-      deliveryTime: '2 mins ago',
-      items: 12,
-      location: { lat: 28.6089, lng: 77.1975 },
-      rider: 'Priya Sharma'
-    }
-  ]);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        console.error('Failed to get user:', userError);
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('customer_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching orders:', error);
+      } else {
+        setOrders(data);
+      }
+
+      setLoading(false);
+    };
+
+    fetchOrders();
+  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'preparing': return 'text-orange-600 bg-orange-50 border-orange-200';
+      case 'pending': return 'text-orange-600 bg-orange-50 border-orange-200';
       case 'picked': return 'text-blue-600 bg-blue-50 border-blue-200';
       case 'delivered': return 'text-green-600 bg-green-50 border-green-200';
       default: return 'text-gray-600 bg-gray-50 border-gray-200';
@@ -59,8 +63,8 @@ const LiveTracking = () => {
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
       <CustomerNavigation onSwitchInterface={function (): void {
         throw new Error('Function not implemented.');
-      } } />
-      
+      }} />
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-4">
@@ -104,11 +108,15 @@ const LiveTracking = () => {
                           <span className="text-sm font-medium capitalize">{order.status}</span>
                         </div>
                       </div>
-                      <p className="text-sm text-gray-700 mb-1">{order.customer}</p>
                       <p className="text-sm text-gray-600 mb-1">Rider: {order.rider}</p>
-                      <p className="text-sm text-gray-600 mb-2">{order.items} items</p>
+                      <p className="text-sm text-gray-600 mb-2">Total Amount: {order.total_amount} </p>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">{order.deliveryTime}</span>
+                        <span className="text-sm font-medium">Estimated: {new Date(order.estimated_delivery_time).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: true,
+                        })}
+                        </span>
                         <Button size="sm" variant="outline">
                           Track
                         </Button>

@@ -1,5 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/lib/supabase'; // adjust path as needed
 import { Link } from 'react-router-dom';
 import { ArrowLeft, MapPin, Clock, User, Phone, CheckCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,6 +15,57 @@ const OrderTracking = () => {
     { id: 2, name: 'Priya Sharma', phone: '+91 9876543211', status: 'delivering', location: 'Sector 18', efficiency: 98, distance: '2.1 km' },
     { id: 3, name: 'Amit Singh', phone: '+91 9876543212', status: 'available', location: 'Sector 12', efficiency: 89, distance: '0.8 km' },
   ]);
+
+  const [isLoading, setIsLoading] = useState(true);
+    const [isStore, setIsStore] = useState(false);
+    
+    // This would normally come from auth context
+    const storeId = 'store-123'; // Mock store ID
+  
+      const navigate = useNavigate();
+  
+    useEffect(() => {
+      const checkRole = async () => {
+        const {
+          data: { user },
+          error: userError
+        } = await supabase.auth.getUser();
+  
+        if (userError || !user) {
+          navigate('/login'); // not logged in
+          return;
+        }
+  
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('user_type')
+          .eq('id', user.id)
+          .single();
+  
+        if (profileError || !profile) {
+          navigate('/unauthorized'); // optional: show unauthorized message
+          return;
+        }
+  
+        if (profile.user_type === 'store_owner') {
+          setIsStore(true);
+        } else {
+          navigate('/unauthorized'); // not a store user
+        }
+  
+        setIsLoading(false);
+      };
+  
+      checkRole();
+    }, [navigate]);
+  
+    if (isLoading) {
+      return <div className="p-6 text-center">Loading dashboard...</div>;
+    }
+  
+    if (!isStore) {
+      return <div className="p-6 text-red-500">Unauthorized access</div>;
+    }
 
   const [orders, setOrders] = useState([
     {

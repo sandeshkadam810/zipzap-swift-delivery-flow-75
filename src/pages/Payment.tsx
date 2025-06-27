@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { supabase } from "@/lib/supabase";
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, CreditCard, Smartphone, Building, Truck, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -20,12 +21,13 @@ const Payment = () => {
   });
   const [upiId, setUpiId] = useState('');
   const [customerAddress, setCustomerAddress] = useState('123 Main Street, Sector 15, New Delhi, 110001');
-  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
-  
+  const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
+
   const navigate = useNavigate();
   const { toast } = useToast();
   const { cartItems, getTotalAmount, clearCart } = useCart();
   const { placeOrder, isPlacingOrder } = useOrderManagement();
+  const totalQuantity = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   // Get user location
   React.useEffect(() => {
@@ -60,7 +62,8 @@ const Payment = () => {
   const deliveryFee = subtotal > 500 ? 0 : 29;
   const total = subtotal + deliveryFee;
 
-  const handlePayment = () => {
+
+  const handlePayment = async () => {
     if (!selectedPayment) {
       toast({
         title: "Select Payment Method",
@@ -112,32 +115,64 @@ const Payment = () => {
       description: "Please wait while we process your payment...",
     });
 
-    // Simulate payment processing
-    setTimeout(() => {
-      placeOrder({
-        customerLocation: userLocation,
-        customerAddress: customerAddress,
-        items: cartItems.map(item => ({
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-          brand: item.brand,
-          unit: item.unit
-        })),
-        totalAmount: total,
-        customerId: 'temp-customer-id' // In real app, get from auth
-      });
+    // 🔐 Get current authenticated user
+    const { data: userData, error: userError } = await supabase.auth.getUser();
 
-      clearCart();
-      navigate('/payment-success');
-    }, 2000);
+    if (userError || !userData?.user?.id) {
+      toast({
+        title: "Authentication Error",
+        description: "You must be logged in to place an order.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // 🛒 Prepare order data
+    const orderPayload = {
+      customer_id: userData.user.id,
+      items: cartItems.map(item => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+      })),
+      total_amount: total,
+      customer_location: `POINT(${userLocation.lng} ${userLocation.lat})`,
+      customer_address: customerAddress,
+      
+    };
+
+    // 📝 Insert into Supabase
+    const { data: insertedOrder, error } = await supabase
+      .from("orders")
+      .insert([{ ...orderPayload, items: JSON.stringify(orderPayload.items) }])  .select()
+  .single();
+
+    if (error) {
+      console.error("Order insertion failed:", error.message);
+      toast({
+        title: "Order Error",
+        description: "Could not place order. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // ✅ Success
+    toast({
+      title: "Order Placed",
+      description: "Your order has been placed successfully!",
+    });
+
+    clearCart();
+    navigate('/payment-success', { state: { order: insertedOrder, totalQuantity, } });
   };
+
 
   if (cartItems.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
-        <CustomerNavigation onSwitchInterface={() => {}} />
+        <CustomerNavigation onSwitchInterface={() => { }} />
         <div className="max-w-md mx-auto pt-20 text-center p-4">
           <h2 className="text-2xl font-bold text-gray-600 mb-4">Cart is empty</h2>
           <p className="text-gray-500 mb-8">Add some items to proceed with payment</p>
@@ -153,8 +188,8 @@ const Payment = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
-      <CustomerNavigation onSwitchInterface={() => {}} />
-      
+      <CustomerNavigation onSwitchInterface={() => { }} />
+
       <div className="max-w-4xl mx-auto p-4 pt-8">
         <div className="flex items-center mb-6">
           <Link to="/cart" className="mr-4">
@@ -179,17 +214,15 @@ const Payment = () => {
                 {paymentMethods.map((method) => (
                   <div
                     key={method.id}
-                    className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                      selectedPayment === method.id
-                        ? 'border-purple-500 bg-purple-50'
-                        : 'border-gray-200 hover:border-purple-300'
-                    }`}
+                    className={`p-4 border rounded-lg cursor-pointer transition-all ${selectedPayment === method.id
+                      ? 'border-purple-500 bg-purple-50'
+                      : 'border-gray-200 hover:border-purple-300'
+                      }`}
                     onClick={() => setSelectedPayment(method.id)}
                   >
                     <div className="flex items-center space-x-3">
-                      <method.icon className={`w-6 h-6 ${
-                        selectedPayment === method.id ? 'text-purple-600' : 'text-gray-600'
-                      }`} />
+                      <method.icon className={`w-6 h-6 ${selectedPayment === method.id ? 'text-purple-600' : 'text-gray-600'
+                        }`} />
                       <div>
                         <h3 className="font-semibold">{method.name}</h3>
                         <p className="text-sm text-gray-600">{method.description}</p>
@@ -213,25 +246,25 @@ const Payment = () => {
                   <Input
                     placeholder="Card Number"
                     value={cardDetails.number}
-                    onChange={(e) => setCardDetails({...cardDetails, number: e.target.value})}
+                    onChange={(e) => setCardDetails({ ...cardDetails, number: e.target.value })}
                     maxLength={16}
                   />
                   <Input
                     placeholder="Cardholder Name"
                     value={cardDetails.name}
-                    onChange={(e) => setCardDetails({...cardDetails, name: e.target.value})}
+                    onChange={(e) => setCardDetails({ ...cardDetails, name: e.target.value })}
                   />
                   <div className="grid grid-cols-2 gap-4">
                     <Input
                       placeholder="MM/YY"
                       value={cardDetails.expiry}
-                      onChange={(e) => setCardDetails({...cardDetails, expiry: e.target.value})}
+                      onChange={(e) => setCardDetails({ ...cardDetails, expiry: e.target.value })}
                       maxLength={5}
                     />
                     <Input
                       placeholder="CVV"
                       value={cardDetails.cvv}
-                      onChange={(e) => setCardDetails({...cardDetails, cvv: e.target.value})}
+                      onChange={(e) => setCardDetails({ ...cardDetails, cvv: e.target.value })}
                       maxLength={3}
                       type="password"
                     />
@@ -290,9 +323,9 @@ const Payment = () => {
                     </div>
                   ))}
                 </div>
-                
+
                 <hr />
-                
+
                 <div className="flex justify-between">
                   <span>Subtotal</span>
                   <span>₹{subtotal}</span>
@@ -306,7 +339,7 @@ const Payment = () => {
                   <span>Total Amount</span>
                   <span>₹{total}</span>
                 </div>
-                
+
                 <div className="bg-gray-50 p-3 rounded-lg text-sm">
                   <p className="font-semibold mb-2">Delivery Address:</p>
                   <textarea
@@ -318,13 +351,13 @@ const Payment = () => {
                   />
                 </div>
 
-                <Button 
+                <Button
                   onClick={handlePayment}
                   className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
                   disabled={isPlacingOrder}
                 >
-                  {isPlacingOrder ? 'Processing...' : 
-                   selectedPayment === 'cod' ? 'Place Order' : `Pay ₹${total}`}
+                  {isPlacingOrder ? 'Processing...' :
+                    selectedPayment === 'cod' ? 'Place Order' : `Pay ₹${total}`}
                 </Button>
 
                 <p className="text-xs text-gray-600 text-center">

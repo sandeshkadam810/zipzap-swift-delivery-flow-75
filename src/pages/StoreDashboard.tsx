@@ -1,5 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/lib/supabase'; // adjust path as needed
 import { Link } from 'react-router-dom';
 import StoreNavigation from '@/components/StoreNavigation';
 import StoreOrderManagement from '@/components/StoreOrderManagement';
@@ -12,9 +14,56 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 const StoreDashboard = () => {
   const [activeTab, setActiveTab] = useState('orders');
   const [lastRefresh, setLastRefresh] = useState(new Date().toLocaleTimeString());
+  const [isLoading, setIsLoading] = useState(true);
+  const [isStore, setIsStore] = useState(false);
   
   // This would normally come from auth context
   const storeId = 'store-123'; // Mock store ID
+
+    const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkRole = async () => {
+      const {
+        data: { user },
+        error: userError
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        navigate('/login'); // not logged in
+        return;
+      }
+
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('user_type')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError || !profile) {
+        navigate('/unauthorized'); // optional: show unauthorized message
+        return;
+      }
+
+      if (profile.user_type === 'store_owner') {
+        setIsStore(true);
+      } else {
+        navigate('/unauthorized'); // not a store user
+      }
+
+      setIsLoading(false);
+    };
+
+    checkRole();
+  }, [navigate]);
+
+  if (isLoading) {
+    return <div className="p-6 text-center">Loading dashboard...</div>;
+  }
+
+  if (!isStore) {
+    return <div className="p-6 text-red-500">Unauthorized access</div>;
+  }
 
   const handleRefresh = () => {
     setLastRefresh(new Date().toLocaleTimeString());

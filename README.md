@@ -151,3 +151,32 @@ zipzap-delivery-app/
 - A/B testing support for UI experiments
 - PWA support for installability and offline caching
 
+## Screenshots
+
+### Interface Selection
+![Interface Selection](./images/Screenshot%202025-06-27%20173527.png)
+
+### Customer - Order Tracking
+![Order Tracking](./images/Screenshot%202025-06-27%20173506.png)
+
+### Customer - Shopping Cart
+![Shopping Cart](./images/Screenshot%202025-06-27%20173444.png)
+
+### Customer - Product Listing
+![Product Listing](./images/Screenshot%202025-06-27%20173404.png)
+
+### Customer - Homepage
+![Homepage](./images/Screenshot%202025-06-27%20173330.png)
+
+### Store - Dashboard
+![Store Dashboard](./images/Screenshot%202025-06-27%20173305.png)
+
+### Store - Live Orders
+![Live Orders](./images/Screenshot%202025-06-27%20173233.png)
+
+### Store - Analytics View
+![Analytics](./images/Screenshot%202025-06-27%20173135.png)
+
+### Store - Delivery Monitoring
+![Delivery Monitoring](./images/Screenshot%202025-06-27%20173058.png)
+

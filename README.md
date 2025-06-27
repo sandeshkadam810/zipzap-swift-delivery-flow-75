@@ -160,13 +160,13 @@ zipzap-delivery-app/
 ![Order Tracking](./images/Screenshot%202025-06-27%20173330.png)
 
 ### Customer - Shopping Cart
-![Shopping Cart](./images/Screenshot%202025-06-27%20173135.png)
+![Shopping Cart](./images/Screenshot%202025-06-27%20173305.png)
 
-### Customer - Product Listing
+### Customer - Payment
 ![Product Listing](./images/Screenshot%202025-06-27%20173404.png)
 
 ### Customer - Homepage
-![Homepage](./images/Screenshot%202025-06-27%20173330.png)
+![Homepage](./images/Screenshot%202025-06-27%20173135.png))
 
 ### Store - Dashboard
 ![Store Dashboard](./images/Screenshot%202025-06-27%20173444.png)
@@ -174,9 +174,6 @@ zipzap-delivery-app/
 ### Store - Live Orders
 ![Live Orders](./images/Screenshot%202025-06-27%20173506.png)
 
-### Store - Analytics View
-![Analytics](./images/Screenshot%202025-06-27%20173444.png)
-
 ### Store - Delivery Monitoring
-![Delivery Monitoring](./images/Screenshot%202025-06-27%20173058.png)
+![Delivery Monitoring](./images/Screenshot%202025-06-27%20173527.png)
 

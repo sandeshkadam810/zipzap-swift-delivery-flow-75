@@ -1,73 +1,156 @@
-# Welcome to your Lovable project
+# ZipZap
 
-## Project info
+**ZipZap** is a dual-interface, real-time e-commerce web application optimized for ultra-fast delivery logistics. It offers tailored experiences for both customers and store owners from a single codebase using modern frontend and backend technologies. The platform supports real-time GPS tracking, AI-powered routing, and smart inventory management.
 
-**URL**: https://lovable.dev/projects/988bef58-ee2e-4421-b84d-63bfe0e757fd
+## Table of Contents
 
-## How can I edit this code?
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Setup Instructions](#setup-instructions)
+- [Environment Variables](#environment-variables)
+- [Available Scripts](#available-scripts)
+- [Backend Integration](#backend-integration)
+- [Deployment Notes](#deployment-notes)
+- [Future Improvements](#future-improvements)
+- [License](#license)
 
-There are several ways of editing your application.
+## Features
 
-**Use Lovable**
+### Customer Interface
+- Product browsing by category
+- Cart management with quantity control
+- Location-based store assignment
+- Real-time order tracking with map view
+- Integrated coupon system and checkout flow
+- Mobile-first responsive UI
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/988bef58-ee2e-4421-b84d-63bfe0e757fd) and start prompting.
+### Store Interface
+- Store dashboard with analytics
+- Smart inventory management
+- Live order queue with priority handling
+- Delivery assignment to nearest available rider
+- Real-time rider status monitoring
 
-Changes made via Lovable will be committed automatically to this repo.
+### Shared Capabilities
+- Authentication and session management
+- Toast notifications for success and error states
+- WebSocket-based real-time data sync
+- Role-based navigation and theming
+- Modular codebase with full TypeScript support
 
-**Use your preferred IDE**
+## Tech Stack
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Frontend
+- React 18 with TypeScript
+- Vite for build tooling
+- Tailwind CSS for utility-first styling
+- Shadcn/ui for headless component primitives
+- React Router DOM for client-side routing
+- TanStack React Query for data fetching and caching
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Backend
+- Supabase (PostgreSQL + Realtime + Auth)
+- Row-Level Security (RLS) for access control
+- WebSockets for real-time updates
+- Haversine formula for geo-based logic
 
-Follow these steps:
+## Project Structure
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+zipzap-delivery-app/
+├── public/                     # Static assets
+├── src/
+│   ├── components/             # Shared UI components
+│   ├── features/               # Feature-specific modules
+│   │   ├── cart/               # Cart system
+│   │   ├── auth/               # Authentication modals and hooks
+│   │   ├── store/              # Store-side pages and logic
+│   │   └── customer/           # Customer-facing flows
+│   ├── context/                # Global providers (Cart, Auth)
+│   ├── layouts/                # Navigation and layout logic
+│   ├── pages/                  # Page-level components
+│   ├── routes/                 # App-level route structure
+│   ├── data/                   # Static seed data (products, categories)
+│   ├── supabase/               # Supabase client and DB types
+│   └── utils/                  # Utility functions (distance, formatting)
 ```
 
-**Edit a file directly in GitHub**
+## Setup Instructions
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+1. Clone the repository
+   ```bash
+   git clone https://github.com/yourusername/zipzap-delivery-app.git
+   cd zipzap-delivery-app
+   ```
 
-**Use GitHub Codespaces**
+2. Install dependencies
+   ```bash
+   npm install
+   ```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+3. Configure environment variables
 
-## What technologies are used for this project?
+   Create a `.env` file in the root directory:
 
-This project is built with:
+   ```env
+   VITE_SUPABASE_URL=https://your-project.supabase.co
+   VITE_SUPABASE_ANON_KEY=your-anon-key
+   ```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+4. Start the development server
+   ```bash
+   npm run dev
+   ```
 
-## How can I deploy this project?
+## Environment Variables
 
-Simply open [Lovable](https://lovable.dev/projects/988bef58-ee2e-4421-b84d-63bfe0e757fd) and click on Share -> Publish.
+| Variable               | Description                         |
+|------------------------|-------------------------------------|
+| VITE_SUPABASE_URL      | Supabase project URL                |
+| VITE_SUPABASE_ANON_KEY | Supabase anonymous public key       |
 
-## Can I connect a custom domain to my Lovable project?
+## Available Scripts
 
-Yes, you can!
+- `npm run dev` – Start development server with HMR
+- `npm run build` – Build production assets
+- `npm run preview` – Preview built app locally
+- `npm run lint` – Run ESLint for code quality checks
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## Backend Integration
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+### Supabase Features Used:
+- Authentication: Role-based auth for customers and store owners
+- Database: Product catalog, orders, store locations, users
+- Realtime: Subscriptions for orders, riders, and status updates
+- Storage: Product images and media
+
+### Real-time Features:
+- Live order placement and store assignment
+- Delivery executive assignment based on location and ETA
+- WebSocket updates for customer and store interfaces
+
+### Store Assignment Logic:
+- Uses Haversine formula to find nearest store within 7 km
+- Auto-notifies store operators on new orders
+- Order priority based on value and wait time
+
+## Deployment Notes
+
+- Frontend Hosting: Recommended platforms include Vercel or Netlify.
+- Supabase Configuration: Enable RLS and configure tables:
+  - `users`, `products`, `orders`, `stores`, `riders`, `inventory`
+- Environment Security: Do not expose service_role keys on frontend.
+
+## Future Improvements
+
+- Admin interface for platform operators
+- Payment gateway integration
+- Push notifications (Web Push or Firebase)
+- Order history and refunds flow
+- A/B testing support for UI experiments
+- PWA support for installability and offline caching
+
+## License
+
+This project is licensed under the MIT License. See the LICENSE file for details.

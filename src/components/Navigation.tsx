@@ -9,10 +9,20 @@ import LocationSelector from './LocationSelector';
 const Navigation = () => {
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const [user, setUser] = useState<any>(null);
 
   const handleAuthClick = (mode: 'login' | 'signup') => {
     setAuthMode(mode);
     setShowAuth(true);
+  };
+
+  const handleAuthSuccess = (userData: any) => {
+    setUser(userData);
+    setShowAuth(false);
+  };
+
+  const handleLogout = () => {
+    setUser(null);
   };
 
   return (
@@ -55,19 +65,34 @@ const Navigation = () => {
             </div>
 
             <div className="flex items-center space-x-3">
-              <Button 
-                variant="ghost" 
-                onClick={() => handleAuthClick('login')}
-                className="hover:bg-purple-50 hover:text-purple-600 transition-all"
-              >
-                Login
-              </Button>
-              <Button 
-                onClick={() => handleAuthClick('signup')}
-                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 shadow-lg hover:shadow-xl transition-all"
-              >
-                Sign Up
-              </Button>
+              {user ? (
+                <>
+                  <span className="text-gray-600">Welcome, {user.name}</span>
+                  <Button 
+                    variant="ghost" 
+                    onClick={handleLogout}
+                    className="hover:bg-purple-50 hover:text-purple-600 transition-all"
+                  >
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => handleAuthClick('login')}
+                    className="hover:bg-purple-50 hover:text-purple-600 transition-all"
+                  >
+                    Login
+                  </Button>
+                  <Button 
+                    onClick={() => handleAuthClick('signup')}
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 shadow-lg hover:shadow-xl transition-all"
+                  >
+                    Sign Up
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -78,6 +103,7 @@ const Navigation = () => {
         onClose={() => setShowAuth(false)} 
         mode={authMode}
         onModeChange={setAuthMode}
+        onAuthSuccess={handleAuthSuccess}
       />
     </>
   );

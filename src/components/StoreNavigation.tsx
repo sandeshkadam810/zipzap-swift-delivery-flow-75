@@ -123,12 +123,6 @@ useEffect(() => {
                   >
                     Login
                   </Button>
-                  <Button
-                    onClick={() => handleAuthClick('signup')}
-                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg hover:shadow-xl transition-all"
-                  >
-                    Sign Up
-                  </Button>
                 </>
               )}
             </div>

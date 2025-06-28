@@ -39,14 +39,14 @@ const DeliveryDashboard = () => {
       const { data, error } = await supabase.auth.getUser();
       if (data?.user) {
         setUser(data.user);
-        
+
         // Get delivery executive profile
         const { data: execData } = await supabase
           .from('delivery_executives')
           .select('*')
-          .eq('id', data.user.id)
+          .eq('user_id', data.user.id)
           .single();
-        
+
         if (execData) {
           setDeliveryExecutive(execData);
         }
@@ -55,41 +55,40 @@ const DeliveryDashboard = () => {
     getUser();
   }, []);
 
+
   // Fetch assigned orders
   const { data: orders = [], refetch } = useQuery({
     queryKey: ['delivery-orders', deliveryExecutive?.id],
     queryFn: async () => {
       if (!deliveryExecutive?.id) return [];
-      
+
       const { data, error } = await supabase
         .from('orders')
         .select(`
-          *,
-          stores (
-            id,
-            name,
-            address,
-            phone,
-            location
-          )
-        `)
+        *,
+        store: stores (
+          id,
+          name,
+          address,
+          phone,
+          location
+        )
+      `)
         .eq('delivery_exec_id', deliveryExecutive.id)
-        .in('status', ['picked', 'pending'])
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
-      
+      if (error) {
+        console.error("Error fetching orders:", error);
+        throw error;
+      }
+
       return data.map(order => ({
         ...order,
         customer_location: parseLocation(order.customer_location),
-        store: {
-          ...order.stores,
-          location: parseLocation(order.stores?.location)
-        }
-      })) as DeliveryOrder[];
+      })) as DeliveryOrder[]; // Assuming store is no longer required in the type
     },
     enabled: !!deliveryExecutive?.id,
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 30000,
   });
 
   // Helper function to parse location
@@ -101,37 +100,64 @@ const DeliveryDashboard = () => {
   };
 
   // Mark order as delivered
-  const deliverOrderMutation = useMutation({
-    mutationFn: async (orderId: string) => {
-      const { error } = await supabase
-        .from('orders')
-        .update({ 
-          status: 'delivered',
-          actual_delivery_time: new Date().toISOString()
-        })
-        .eq('id', orderId);
+const deliverOrderMutation = useMutation({
+  mutationFn: async (orderId: string) => {
+    // 1. Mark order as delivered
+    const { error: orderError } = await supabase
+      .from('orders')
+      .update({ 
+        status: 'delivered',
+        actual_delivery_time: new Date().toISOString()
+      })
+      .eq('id', orderId);
 
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast({
-        title: "Order Delivered!",
-        description: "Order has been marked as delivered successfully.",
-      });
-      refetch();
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update order status.",
-        variant: "destructive",
-      });
-    },
-  });
+    if (orderError) throw orderError;
+
+    // 2. Fetch the delivery_exec_id for the order
+    const { data: orderData, error: fetchError } = await supabase
+      .from('orders')
+      .select('delivery_exec_id')
+      .eq('id', orderId)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    const execId = orderData.delivery_exec_id;
+
+    if (!execId) throw new Error('No delivery executive assigned to this order');
+
+    // 3. Update delivery_executive.is_available to true
+    const { error: execError } = await supabase
+      .from('delivery_executives')
+      .update({ is_available: true })
+      .eq('id', execId);
+
+    if (execError) throw execError;
+  },
+
+  onSuccess: () => {
+    toast({
+      title: "Order Delivered!",
+      description: "Order marked as delivered and executive marked as available.",
+    });
+    refetch();
+  },
+
+  onError: (error: any) => {
+    toast({
+      title: "Error",
+      description: error.message || "Failed to mark order as delivered.",
+      variant: "destructive",
+    });
+  },
+});
 
   // Pick up order
+  const [loadingOrderId, setLoadingOrderId] = useState<string | null>(null);
+
   const pickupOrderMutation = useMutation({
     mutationFn: async (orderId: string) => {
+      setLoadingOrderId(orderId);
       const { error } = await supabase
         .from('orders')
         .update({ status: 'picked' })
@@ -140,19 +166,19 @@ const DeliveryDashboard = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({
-        title: "Order Picked Up!",
-        description: "Order has been picked up from the store.",
-      });
+      setLoadingOrderId(null);
+      toast({ title: "Order Picked Up!", description: "Order has been picked up." });
       refetch();
     },
     onError: (error: any) => {
+      setLoadingOrderId(null);
       toast({
         title: "Error",
-        description: error.message || "Failed to update order status.",
+        description: error.message || "Failed to update order.",
         variant: "destructive",
       });
     },
+
   });
 
   const getStatusColor = (status: string) => {
@@ -173,27 +199,14 @@ const DeliveryDashboard = () => {
     }
   };
 
-  // if (!user) {
-  //   return (
-  //     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-  //       <Card className="w-96">
-  //         <CardContent className="text-center py-8">
-  //           <Truck className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-  //           <h3 className="text-lg font-semibold text-gray-600 mb-2">Please Login</h3>
-  //           <p className="text-gray-500">You need to login to access the delivery dashboard.</p>
-  //         </CardContent>
-  //       </Card>
-  //     </div>
-  //   );
-  // }
 
   return (
-  <div className="min-h-screen bg-gray-50">
-    <DeliveryNavigation onSwitchInterface={() => {}} />
+    <div className="min-h-screen bg-gray-50">
+      <DeliveryNavigation onSwitchInterface={() => { }} />
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-<div className="mt-8 mb-8">
-  <h1 className="text-3xl font-bold text-gray-900 mb-2">Delivery Dashboard</h1>
+        <div className="mt-8 mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Delivery Dashboard</h1>
 
           <p className="text-gray-600">Manage your assigned deliveries and track your progress</p>
         </div>
@@ -209,7 +222,7 @@ const DeliveryDashboard = () => {
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Pending Pickups</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    {orders.filter(o => o.status === 'pending').length}
+                    {orders.filter(o => o.status === 'ready').length}
                   </p>
                 </div>
               </div>
@@ -310,7 +323,17 @@ const DeliveryDashboard = () => {
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Items</span>
-                        <span className="font-semibold">{order.items.length} items</span>
+                        {(() => {
+                          try {
+                            const parsed = typeof order.items === 'string'
+                              ? JSON.parse(order.items)
+                              : order.items;
+                            return `${parsed?.length || 0} items •`;
+                          } catch (err) {
+                            console.error('Error parsing order.items:', order.items);
+                            return '0 items •';
+                          }
+                        })()}
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Order Time</span>
@@ -336,19 +359,20 @@ const DeliveryDashboard = () => {
 
                     {/* Action Buttons */}
                     <div className="flex space-x-2 pt-4">
-                      {order.status === 'pending' && (
-                        <Button 
+                      {order.status === 'ready' && (
+                        <Button
                           onClick={() => pickupOrderMutation.mutate(order.id)}
-                          disabled={pickupOrderMutation.isPending}
+                          disabled={loadingOrderId === order.id}
                           className="flex-1 bg-blue-600 hover:bg-blue-700"
                         >
                           <Package className="h-4 w-4 mr-1" />
-                          Mark as Picked Up
+                          {loadingOrderId === order.id ? 'Updating...' : 'Mark as Picked Up'}
                         </Button>
+
                       )}
-                      
+
                       {order.status === 'picked' && (
-                        <Button 
+                        <Button
                           onClick={() => deliverOrderMutation.mutate(order.id)}
                           disabled={deliverOrderMutation.isPending}
                           className="flex-1 bg-green-600 hover:bg-green-700"

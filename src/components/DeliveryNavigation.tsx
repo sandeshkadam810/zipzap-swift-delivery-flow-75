@@ -63,26 +63,11 @@ const DeliveryNavigation = ({ onSwitchInterface }: DeliveryNavigationProps) => {
             </div>
 
             {/* Navigation Options */}
-            <div className="hidden md:flex items-center space-x-6">
-              <div className="flex items-center space-x-1 text-gray-600 hover:text-green-600 transition-colors font-medium cursor-pointer">
-                <MapPin className="h-4 w-4" />
-                <span>My Orders</span>
-              </div>
-              <div className="flex items-center space-x-1 text-gray-600 hover:text-green-600 transition-colors font-medium cursor-pointer">
-                <Clock className="h-4 w-4" />
-                <span>Schedule</span>
-              </div>
-            </div>
+            
 
             {/* Right Side Buttons */}
             <div className="flex items-center space-x-3">
-              <Button
-                variant="ghost"
-                onClick={onSwitchInterface}
-                className="hover:bg-green-50 hover:text-green-600 text-sm"
-              >
-                Switch Interface
-              </Button>
+              
 
               {user ? (
                 <>

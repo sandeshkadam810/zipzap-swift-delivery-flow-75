@@ -177,3 +177,20 @@ zipzap-delivery-app/
 ### Store - Delivery Monitoring
 ![Delivery Monitoring](./images/Screenshot%202025-06-27%20173527.png)
 
+<h2>📜 License</h2>
+<p>
+  This project is licensed under the <a href="./LICENSE">MIT License</a>.
+</p>
+
+<blockquote style="border-left: 4px solid #fbbc04; padding-left: 12px; margin: 16px 0;">
+  <strong>⚠️ Attribution Required:</strong><br>
+  If you use any part of this codebase — including significant portions, components, or concepts — 
+  <strong>you must credit the original author</strong>:
+  <pre style="background: #f6f8fa; padding: 8px; border-radius: 4px;">Originally developed by Sandesh Kadam – <a href="https://github.com/sandeshk22">github.com/sandeshk22</a></pre>
+  Failure to do so violates the terms of the license.
+</blockquote>
+
+<h3>License Badge</h3>
+<p>
+  <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT">
+</p>

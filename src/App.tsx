@@ -10,6 +10,7 @@ import Category from "./pages/Category";
 import SmartInventory from "./pages/SmartInventory";
 import LiveTracking from "./pages/LiveTracking";
 import StoreDashboard from "./pages/StoreDashboard";
+import DeliveryDashboard from "./pages/DeliveryDashboard";
 import Payment from "./pages/Payment";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import CartPage from "./pages/CartPage";
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/live-tracking" element={<LiveTracking />} />
             <Route path="/order-tracking" element={<OrderTracking />} />
             <Route path="/store-dashboard" element={<StoreDashboard />} />
+            <Route path="/delivery-dashboard" element={<DeliveryDashboard />} />
             <Route path="/cart" element={<CartPage />} />
             <Route path="/payment" element={<Payment />} />
             <Route path="/customer-home" element={<CustomerHome />} />

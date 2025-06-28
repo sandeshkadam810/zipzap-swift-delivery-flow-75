@@ -205,6 +205,7 @@ export type Database = {
           location: unknown
           name: string
           phone: string | null
+          user_id: string | null
         }
         Insert: {
           address?: string | null
@@ -214,6 +215,7 @@ export type Database = {
           location: unknown
           name: string
           phone?: string | null
+          user_id?: string | null
         }
         Update: {
           address?: string | null
@@ -223,6 +225,7 @@ export type Database = {
           location?: unknown
           name?: string
           phone?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }

@@ -15,7 +15,6 @@ const OrderTracking = () => {
   const [deliveryExecutives, setDeliveryExecutives] = useState<any[]>([]);
 
 
-  const [isLoading, setIsLoading] = useState(true);
   const [isStore, setIsStore] = useState(false);
 
   interface Order {
@@ -60,10 +59,6 @@ const OrderTracking = () => {
         error: userError,
       } = await supabase.auth.getUser();
 
-      if (userError || !user) {
-        navigate('/login');
-        return;
-      }
 
       // Check if user is a store
       const { data: profile, error: profileError } = await supabase
@@ -72,12 +67,11 @@ const OrderTracking = () => {
         .eq('id', user.id)
         .single();
 
-      if (profileError || !profile || profile.user_type !== 'store') {
-        navigate('/unauthorized');
-        return;
+      if (!user || profileError || !profile || profile.user_type !== 'store') {
+        setIsStore(false);
+      } else {
+        setIsStore(true);
       }
-
-      setIsStore(true);
 
       // Get store ID from stores table using user.id
       const { data: storeData, error: storeError } = await supabase
@@ -88,11 +82,6 @@ const OrderTracking = () => {
 
       console.log("Store ID:", storeData?.id);
 
-      if (storeError || !storeData) {
-        console.error('Store not found for this user');
-        navigate('/unauthorized');
-        return;
-      }
 
       const storeId = storeData.id;
 
@@ -113,64 +102,62 @@ const OrderTracking = () => {
 
 
       setOrders(ordersData); // ✅ This actually updates the UI
-      setIsLoading(false);
     };
 
     fetchOrdersForStore();
   }, [navigate]);
 
-  if (isLoading) return <div className="p-6 text-gray-500">Loading orders...</div>;
 
-const assignRider = async (orderId: string, executiveId: string) => {
-  const rider = deliveryExecutives.find(exec => exec.id === executiveId);
-  if (!rider) return;
-console.log('Assign button clicked for order:', orderId, 'executive:', executiveId);
+  const assignRider = async (orderId: string, executiveId: string) => {
+    const rider = deliveryExecutives.find(exec => exec.id === executiveId);
+    if (!rider) return;
+    console.log('Assign button clicked for order:', orderId, 'executive:', executiveId);
 
-  // 1. Update the order to assign delivery executive
-  const { error: orderError } = await supabase
-    .from('orders')
-    .update({
-      delivery_exec_id: executiveId,
-      status: 'ready',
-    })
-    .eq('id', orderId);
+    // 1. Update the order to assign delivery executive
+    const { error: orderError } = await supabase
+      .from('orders')
+      .update({
+        delivery_exec_id: executiveId,
+        status: 'ready',
+      })
+      .eq('id', orderId);
 
-  // 2. Update the executive's availability
-  const { error: execError } = await supabase
-    .from('delivery_executives')
-    .update({ is_available: false })
-    .eq('id', executiveId);
+    // 2. Update the executive's availability
+    const { error: execError } = await supabase
+      .from('delivery_executives')
+      .update({ is_available: false })
+      .eq('id', executiveId);
 
-  if (orderError || execError) {
-    console.error('Assignment failed:', {
-      orderError: orderError?.message,
-      execError: execError?.message,
-    });
-    return;
-  }
+    if (orderError || execError) {
+      console.error('Assignment failed:', {
+        orderError: orderError?.message,
+        execError: execError?.message,
+      });
+      return;
+    }
 
-  // 3. Update frontend state (local only)
-  setOrders(prev =>
-    prev.map(order =>
-      order.id === orderId
-        ? {
+    // 3. Update frontend state (local only)
+    setOrders(prev =>
+      prev.map(order =>
+        order.id === orderId
+          ? {
             ...order,
             status: 'assigned',
             delivery_exec_id: executiveId,
             assignedRider: rider.name,
           }
-        : order
-    )
-  );
+          : order
+      )
+    );
 
-  setDeliveryExecutives(prev =>
-    prev.map(exec =>
-      exec.id === executiveId
-        ? { ...exec, is_available: false }
-        : exec
-    )
-  );
-};
+    setDeliveryExecutives(prev =>
+      prev.map(exec =>
+        exec.id === executiveId
+          ? { ...exec, is_available: false }
+          : exec
+      )
+    );
+  };
 
 
 
@@ -185,14 +172,7 @@ console.log('Assign button clicked for order:', orderId, 'executive:', executive
   };
 
 
-  if (isLoading) {
-    return <div className="p-6 text-center">Loading dashboard...</div>;
-  }
-
-  if (!isStore) {
-    return <div className="p-6 text-red-500">Unauthorized access</div>;
-  }
-
+  
   const currentOrder = orders.find(o => o.id === selectedOrder);
 
   console.log('Delivery Executives:', deliveryExecutives);

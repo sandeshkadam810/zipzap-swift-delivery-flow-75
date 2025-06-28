@@ -41,26 +41,26 @@ const CustomerNavigation = ({ onSwitchInterface }: CustomerNavigationProps) => {
 
 
 
-const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<any>(null);
 
-useEffect(() => {
-  const getUser = async () => {
-    const { data, error } = await supabase.auth.getUser();
-    if (data?.user) {
-      setUser(data.user);
-    }
-  };
-  getUser();
+  useEffect(() => {
+    const getUser = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (data?.user) {
+        setUser(data.user);
+      }
+    };
+    getUser();
 
-  // Optional: subscribe to auth changes to auto-update user state
-  const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-    setUser(session?.user || null);
-  });
+    // Optional: subscribe to auth changes to auto-update user state
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user || null);
+    });
 
-  return () => {
-    listener?.subscription.unsubscribe();
-  };
-}, []);
+    return () => {
+      listener?.subscription.unsubscribe();
+    };
+  }, []);
 
 
   return (
@@ -126,15 +126,15 @@ useEffect(() => {
                   <span className="text-gray-600 hidden sm:inline">Welcome, {user.name}</span>
                   <Button
                     variant="ghost"
-                    onClick={() => {
-                      handleLogout();
-                      navigate('/');
+                    onClick={async () => {
+                      await handleLogout();
+                      navigate('/', { replace: true });
                     }}
-
                     className="hover:bg-blue-50 hover:text-blue-600 transition-all"
                   >
                     Logout
                   </Button>
+
                 </>
               ) : (
                 <>

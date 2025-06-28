@@ -8,7 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import StoreNavigation from '@/components/StoreNavigation';
 
+
 const OrderTracking = () => {
+  const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState('ZZ001');
   const [deliveryExecutives, setDeliveryExecutives] = useState([
     { id: 1, name: 'Rahul Kumar', phone: '+91 9876543210', status: 'available', location: 'Sector 15', efficiency: 94, distance: '1.2 km' },
@@ -17,81 +19,97 @@ const OrderTracking = () => {
   ]);
 
   const [isLoading, setIsLoading] = useState(true);
-    const [isStore, setIsStore] = useState(false);
-    
-  
-      const navigate = useNavigate();
-  
-    useEffect(() => {
-      const checkRole = async () => {
-        const {
-          data: { user },
-          error: userError
-        } = await supabase.auth.getUser();
-  
-        if (userError || !user) {
-          navigate('/login'); // not logged in
-          return;
-        }
-  
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('user_type')
-          .eq('id', user.id)
-          .single();
-  
-        if (profileError || !profile) {
-          navigate('/unauthorized'); // optional: show unauthorized message
-          return;
-        }
-  
-        if (profile.user_type === 'store') {
-          setIsStore(true);
-        } else {
-          navigate('/unauthorized'); // not a store user
-        }
-  
-        setIsLoading(false);
-      };
-  
-      checkRole();
-    }, [navigate]);
-  
+  const [isStore, setIsStore] = useState(false);
+
+  interface Order {
+    id: string;
+    customer_id: string;
+    store_id: string;
+    delivery_exec_id: string;
+    items: any[];
+    total_amount: number;
+    status: string;
+    customer_address: string;
+    customer_location: { lat: number; lng: number };
+    estimated_delivery_time: string;
+  }
 
 
-  const [orders, setOrders] = useState([
-    {
-      id: 'ZZ001',
-      customer: 'John Doe',
-      items: 8,
-      address: '123 Main Street, Sector 15, New Delhi',
-      phone: '+91 9876543213',
-      status: 'preparing',
-      assignedStore: 'Store A - Sector 15',
-      estimatedTime: '8-12 mins',
-      distance: '1.5 km',
-      coordinates: { lat: 28.5355, lng: 77.3910 }
-    },
-    {
-      id: 'ZZ002',
-      customer: 'Sarah Wilson',
-      items: 5,
-      address: '456 Park Avenue, Sector 18, New Delhi',
-      phone: '+91 9876543214',
-      status: 'assigned',
-      assignedStore: 'Store B - Sector 18',
-      assignedRider: 'Priya Sharma',
-      estimatedTime: '10-15 mins',
-      distance: '2.3 km',
-      coordinates: { lat: 28.5485, lng: 77.3915 }
-    }
-  ]);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchOrdersForStore = async () => {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        navigate('/login');
+        return;
+      }
+
+      // Check if user is a store
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('user_type')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError || !profile || profile.user_type !== 'store') {
+        navigate('/unauthorized');
+        return;
+      }
+
+      setIsStore(true);
+
+      // Get store ID from stores table using user.id
+      const { data: storeData, error: storeError } = await supabase
+        .from('stores')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      console.log("Store ID:", storeData?.id);
+
+      if (storeError || !storeData) {
+        console.error('Store not found for this user');
+        navigate('/unauthorized');
+        return;
+      }
+
+      const storeId = storeData.id;
+
+      // Now fetch orders for this store ID
+      const { data: ordersData, error: ordersError } = await supabase
+        .from('orders')
+        .select('id, customer_id, store_id, delivery_exec_id, items, total_amount, status, customer_address, customer_location, estimated_delivery_time')
+        .eq('store_id', storeId)
+        .order('created_at', { ascending: false });
+      console.log("Orders found:", ordersData?.length);
+      console.log("Orders data:", ordersData);
+
+      if (ordersError) {
+        console.error("Error fetching orders:", ordersError.message);
+        return;
+      }
+
+
+
+      setOrders(ordersData); // ✅ This actually updates the UI
+      setIsLoading(false);
+    };
+
+    fetchOrdersForStore();
+  }, [navigate]);
+
+  if (isLoading) return <div className="p-6 text-gray-500">Loading orders...</div>;
 
   const assignRider = (orderId: string, riderId: number) => {
     const rider = deliveryExecutives.find(r => r.id === riderId);
     if (rider) {
-      setOrders(prev => prev.map(order => 
-        order.id === orderId 
+      setOrders(prev => prev.map(order =>
+        order.id === orderId
           ? { ...order, status: 'assigned', assignedRider: rider.name }
           : order
       ));
@@ -114,22 +132,22 @@ const OrderTracking = () => {
   };
 
 
-      if (isLoading) {
-      return <div className="p-6 text-center">Loading dashboard...</div>;
-    }
-  
-    if (!isStore) {
-      return <div className="p-6 text-red-500">Unauthorized access</div>;
-    }
-    
+  if (isLoading) {
+    return <div className="p-6 text-center">Loading dashboard...</div>;
+  }
+
+  if (!isStore) {
+    return <div className="p-6 text-red-500">Unauthorized access</div>;
+  }
+
   const currentOrder = orders.find(o => o.id === selectedOrder);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
       <StoreNavigation onSwitchInterface={function (): void {
         throw new Error('Function not implemented.');
-      } } />
-      
+      }} />
+
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex items-center mb-6">
           <Link to="/store-dashboard" className="mr-4">
@@ -154,9 +172,8 @@ const OrderTracking = () => {
                 {orders.map((order) => (
                   <div
                     key={order.id}
-                    className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                      selectedOrder === order.id ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-purple-300'
-                    }`}
+                    className={`p-4 border rounded-lg cursor-pointer transition-all ${selectedOrder === order.id ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-purple-300'
+                      }`}
                     onClick={() => setSelectedOrder(order.id)}
                   >
                     <div className="flex justify-between items-start mb-2">
@@ -165,8 +182,25 @@ const OrderTracking = () => {
                         {order.status}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-600 mb-1">{order.customer}</p>
-                    <p className="text-xs text-gray-500">{order.items} items • {order.distance}</p>
+                    <p className="text-sm text-gray-600 mb-1">{order.customer_id}</p>
+                    <p className="text-xs text-gray-500">
+                      {(() => {
+                        try {
+                          const parsed = typeof order.items === 'string'
+                            ? JSON.parse(order.items)
+                            : order.items;
+                          return `${parsed?.length || 0} items •`;
+                        } catch (err) {
+                          console.error('Error parsing order.items:', order.items);
+                          return '0 items •';
+                        }
+                      })()}
+                      ₹{String(order.total_amount)}
+
+                    </p>
+
+
+
                   </div>
                 ))}
               </CardContent>
@@ -190,36 +224,70 @@ const OrderTracking = () => {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <p className="text-sm text-gray-600">Customer</p>
-                        <p className="font-semibold">{currentOrder.customer}</p>
+                        <p className="font-semibold">{currentOrder.customer_id}</p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-600">Items</p>
-                        <p className="font-semibold">{currentOrder.items} items</p>
+                        {(() => {
+                          let parsedItems;
+
+                          try {
+                            parsedItems = typeof currentOrder.items === 'string'
+                              ? JSON.parse(currentOrder.items)
+                              : currentOrder.items;
+                          } catch (e) {
+                            console.error('Failed to parse items:', currentOrder.items);
+                            parsedItems = [];
+                          }
+
+                          if (!Array.isArray(parsedItems) || parsedItems.length === 0) {
+                            return <p className="text-gray-500">No items found.</p>;
+                          }
+
+                          return (
+                            <ul className="space-y-2 mt-2">
+                              {parsedItems.map((item: any, index: number) => (
+                                <li key={index} className="text-sm text-gray-700">
+                                  🛒 {item.name} — ₹{item.price} × {item.quantity}
+                                </li>
+                              ))}
+                            </ul>
+                          );
+                        })()}
                       </div>
                       <div>
                         <p className="text-sm text-gray-600">Estimated Time</p>
-                        <p className="font-semibold">{currentOrder.estimatedTime}</p>
+                        <p className="font-semibold">
+                          {new Date(currentOrder.estimated_delivery_time).toLocaleString('en-IN', {
+                            dateStyle: 'medium',
+                            timeStyle: 'short',
+                            hour12: true,
+                          })}
+                        </p>
+
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600">Distance</p>
-                        <p className="font-semibold">{currentOrder.distance}</p>
+                        <div>
+                          <p className="text-sm text-gray-600">Total Amount</p>
+                          <p className="font-semibold">₹{currentOrder.total_amount}</p>
+                        </div>
                       </div>
                     </div>
                     <div>
                       <p className="text-sm text-gray-600 mb-1">Delivery Address</p>
                       <p className="font-semibold flex items-center">
                         <MapPin className="w-4 h-4 mr-1 text-purple-600" />
-                        {currentOrder.address}
+                        {currentOrder.customer_address}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-600 mb-1">Assigned Store</p>
-                      <p className="font-semibold">{currentOrder.assignedStore}</p>
+                      <p className="font-semibold">{currentOrder.store_id}</p>
                     </div>
-                    {currentOrder.assignedRider && (
+                    {currentOrder.delivery_exec_id && (
                       <div>
                         <p className="text-sm text-gray-600 mb-1">Assigned Rider</p>
-                        <p className="font-semibold">{currentOrder.assignedRider}</p>
+                        <p className="font-semibold">{currentOrder.delivery_exec_id}</p>
                       </div>
                     )}
                   </CardContent>

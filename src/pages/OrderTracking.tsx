@@ -12,11 +12,8 @@ import StoreNavigation from '@/components/StoreNavigation';
 const OrderTracking = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState('ZZ001');
-  const [deliveryExecutives, setDeliveryExecutives] = useState([
-    { id: 1, name: 'Rahul Kumar', phone: '+91 9876543210', status: 'available', location: 'Sector 15', efficiency: 94, distance: '1.2 km' },
-    { id: 2, name: 'Priya Sharma', phone: '+91 9876543211', status: 'delivering', location: 'Sector 18', efficiency: 98, distance: '2.1 km' },
-    { id: 3, name: 'Amit Singh', phone: '+91 9876543212', status: 'available', location: 'Sector 12', efficiency: 89, distance: '0.8 km' },
-  ]);
+  const [deliveryExecutives, setDeliveryExecutives] = useState<any[]>([]);
+
 
   const [isLoading, setIsLoading] = useState(true);
   const [isStore, setIsStore] = useState(false);
@@ -38,6 +35,25 @@ const OrderTracking = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+
+
+    const fetchExecutives = async () => {
+      const { data, error } = await supabase
+        .from('delivery_executives')
+        .select('id, name, phone, is_available, efficiency');
+
+      if (error) {
+        console.error('Error fetching delivery executives:', error.message);
+        return;
+      }
+
+      setDeliveryExecutives(data || []);
+    };
+
+    fetchExecutives();
+
+
+
     const fetchOrdersForStore = async () => {
       const {
         data: { user },
@@ -105,21 +121,58 @@ const OrderTracking = () => {
 
   if (isLoading) return <div className="p-6 text-gray-500">Loading orders...</div>;
 
-  const assignRider = (orderId: string, riderId: number) => {
-    const rider = deliveryExecutives.find(r => r.id === riderId);
-    if (rider) {
-      setOrders(prev => prev.map(order =>
-        order.id === orderId
-          ? { ...order, status: 'assigned', assignedRider: rider.name }
-          : order
-      ));
-      setDeliveryExecutives(prev => prev.map(exec =>
-        exec.id === riderId
-          ? { ...exec, status: 'assigned' }
-          : exec
-      ));
-    }
-  };
+const assignRider = async (orderId: string, executiveId: string) => {
+  const rider = deliveryExecutives.find(exec => exec.id === executiveId);
+  if (!rider) return;
+console.log('Assign button clicked for order:', orderId, 'executive:', executiveId);
+
+  // 1. Update the order to assign delivery executive
+  const { error: orderError } = await supabase
+    .from('orders')
+    .update({
+      delivery_exec_id: executiveId,
+      status: 'ready',
+    })
+    .eq('id', orderId);
+
+  // 2. Update the executive's availability
+  const { error: execError } = await supabase
+    .from('delivery_executives')
+    .update({ is_available: false })
+    .eq('id', executiveId);
+
+  if (orderError || execError) {
+    console.error('Assignment failed:', {
+      orderError: orderError?.message,
+      execError: execError?.message,
+    });
+    return;
+  }
+
+  // 3. Update frontend state (local only)
+  setOrders(prev =>
+    prev.map(order =>
+      order.id === orderId
+        ? {
+            ...order,
+            status: 'assigned',
+            delivery_exec_id: executiveId,
+            assignedRider: rider.name,
+          }
+        : order
+    )
+  );
+
+  setDeliveryExecutives(prev =>
+    prev.map(exec =>
+      exec.id === executiveId
+        ? { ...exec, is_available: false }
+        : exec
+    )
+  );
+};
+
+
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -141,6 +194,9 @@ const OrderTracking = () => {
   }
 
   const currentOrder = orders.find(o => o.id === selectedOrder);
+
+  console.log('Delivery Executives:', deliveryExecutives);
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
@@ -303,43 +359,42 @@ const OrderTracking = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {deliveryExecutives.filter(exec => exec.status === 'available').map((executive) => (
-                        <div key={executive.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                          <div className="flex items-center space-x-4">
-                            <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
-                              {executive.name.charAt(0)}
+                      {deliveryExecutives
+                        .filter(exec => exec.is_available)
+                        .map((executive) => (
+                          <div key={executive.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <div className="flex items-center space-x-4">
+                              <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
+                                {executive.name.charAt(0)}
+                              </div>
+                              <div>
+                                <h3 className="font-semibold">{executive.name}</h3>
+                                <p className="text-sm text-gray-600 flex items-center">
+                                  <Phone className="w-3 h-3 mr-1" />
+                                  {executive.phone}
+                                </p>
+                              </div>
                             </div>
-                            <div>
-                              <h3 className="font-semibold">{executive.name}</h3>
-                              <p className="text-sm text-gray-600 flex items-center">
-                                <MapPin className="w-3 h-3 mr-1" />
-                                {executive.location} • {executive.distance} away
-                              </p>
-                              <p className="text-sm text-gray-600 flex items-center">
-                                <Phone className="w-3 h-3 mr-1" />
-                                {executive.phone}
-                              </p>
+                            <div className="text-right">
+                              <div className="flex items-center mb-2">
+                                <CheckCircle className="w-4 h-4 text-green-500 mr-1" />
+                                <span className="text-sm font-medium">{executive.efficiency}% efficiency</span>
+                              </div>
+                              <Button
+                                size="sm"
+                                className="bg-gradient-to-r from-purple-600 to-blue-600"
+                                onClick={() => assignRider(currentOrder.id, executive.id)}
+                                disabled={currentOrder.status === 'assigned'}
+                              >
+                                {currentOrder.status === 'assigned' ? 'Assigned' : 'Assign Order'}
+                              </Button>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <div className="flex items-center mb-2">
-                              <CheckCircle className="w-4 h-4 text-green-500 mr-1" />
-                              <span className="text-sm font-medium">{executive.efficiency}% efficiency</span>
-                            </div>
-                            <Button
-                              size="sm"
-                              className="bg-gradient-to-r from-purple-600 to-blue-600"
-                              onClick={() => assignRider(currentOrder.id, executive.id)}
-                              disabled={currentOrder.status === 'assigned'}
-                            >
-                              {currentOrder.status === 'assigned' ? 'Assigned' : 'Assign Order'}
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
+                        ))}
                     </div>
                   </CardContent>
                 </Card>
+
               </>
             )}
           </div>

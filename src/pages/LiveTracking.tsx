@@ -25,9 +25,15 @@ const LiveTracking = () => {
 
       const { data, error } = await supabase
         .from('orders')
-        .select('*')
+        .select(`
+    *,
+    delivery_executives (
+      name
+    )
+  `)
         .eq('customer_id', user.id)
         .order('created_at', { ascending: false });
+
 
       if (error) {
         console.error('Error fetching orders:', error);
@@ -108,7 +114,10 @@ const LiveTracking = () => {
                           <span className="text-sm font-medium capitalize">{order.status}</span>
                         </div>
                       </div>
-                      <p className="text-sm text-gray-600 mb-1">Rider: {order.rider}</p>
+                      <p className="text-sm text-gray-600 mb-1">
+                        Rider: {order.delivery_executives?.name || 'Not Assigned'}
+                      </p>
+
                       <p className="text-sm text-gray-600 mb-2">Total Amount: {order.total_amount} </p>
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium">Estimated: {new Date(order.estimated_delivery_time).toLocaleTimeString([], {
@@ -127,27 +136,7 @@ const LiveTracking = () => {
               </CardContent>
             </Card>
 
-            <Card className="bg-white/80 backdrop-blur-sm border-white/20">
-              <CardHeader>
-                <CardTitle>Delivery Stats</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Average Delivery Time</span>
-                    <span className="font-semibold">8.5 mins</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Orders Today</span>
-                    <span className="font-semibold">234</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Success Rate</span>
-                    <span className="font-semibold text-green-600">98.5%</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+
           </div>
         </div>
       </div>

@@ -186,7 +186,7 @@ zipzap-delivery-app/
   <strong>⚠️ Attribution Required:</strong><br>
   If you use any part of this codebase — including significant portions, components, or concepts — 
   <strong>you must credit the original author</strong>:
-  <pre style="background: #f6f8fa; padding: 8px; border-radius: 4px;">Originally developed by Sandesh Kadam – <a href="https://github.com/sandeshk22">github.com/sandeshk22</a></pre>
+  <pre style="background: #f6f8fa; padding: 8px; border-radius: 4px;">Originally developed by Sandesh Kadam – <a href="https://github.com/sandeshkadam810">github.com/sandeshk22</a></pre>
   Failure to do so violates the terms of the license.
 </blockquote>
 

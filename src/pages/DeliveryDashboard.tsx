@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Truck, MapPin, Clock, Package, Phone, CheckCircle, Navigation } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import DeliveryNavigation from '@/components/DeliveryNavigation';
+
 
 interface DeliveryOrder {
   id: string;
@@ -171,26 +173,28 @@ const DeliveryDashboard = () => {
     }
   };
 
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="w-96">
-          <CardContent className="text-center py-8">
-            <Truck className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-semibold text-gray-600 mb-2">Please Login</h3>
-            <p className="text-gray-500">You need to login to access the delivery dashboard.</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // if (!user) {
+  //   return (
+  //     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+  //       <Card className="w-96">
+  //         <CardContent className="text-center py-8">
+  //           <Truck className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+  //           <h3 className="text-lg font-semibold text-gray-600 mb-2">Please Login</h3>
+  //           <p className="text-gray-500">You need to login to access the delivery dashboard.</p>
+  //         </CardContent>
+  //       </Card>
+  //     </div>
+  //   );
+  // }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+  <div className="min-h-screen bg-gray-50">
+    <DeliveryNavigation onSwitchInterface={() => {}} />
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Delivery Dashboard</h1>
+<div className="mt-8 mb-8">
+  <h1 className="text-3xl font-bold text-gray-900 mb-2">Delivery Dashboard</h1>
+
           <p className="text-gray-600">Manage your assigned deliveries and track your progress</p>
         </div>
 

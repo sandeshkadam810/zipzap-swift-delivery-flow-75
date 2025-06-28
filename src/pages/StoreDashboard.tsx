@@ -1,13 +1,19 @@
-
 import React, { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase'; // adjust path as needed
-import { Link } from 'react-router-dom';
+
 import StoreNavigation from '@/components/StoreNavigation';
 import StoreOrderManagement from '@/components/StoreOrderManagement';
 import DeliveryMonitoring from '@/components/DeliveryMonitoring';
-import { Package, Clock, TrendingUp, Users, Bell, CheckCircle, AlertTriangle, RefreshCw, MapPin, Phone, Truck } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+import {
+  Package, Clock, TrendingUp, Users, Bell, CheckCircle,
+  RefreshCw, Truck, Phone
+} from 'lucide-react';
+
+import {
+  Card, CardContent, CardHeader, CardTitle
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -15,62 +21,40 @@ const StoreDashboard = () => {
   const [activeTab, setActiveTab] = useState('orders');
   const [lastRefresh, setLastRefresh] = useState(new Date().toLocaleTimeString());
   const [isLoading, setIsLoading] = useState(true);
-  const [isStore, setIsStore] = useState(false);
-  
-  // This would normally come from auth context
-  const storeId = 'store-123'; // Mock store ID
+  const [isStoreUser, setIsStoreUser] = useState(false);
 
-    const navigate = useNavigate();
+  // Mock store ID — replace with actual logic if needed
+  const storeId = 'store-123';
+  const navigate = useNavigate();
 
   useEffect(() => {
     const checkRole = async () => {
-      const {
-        data: { user },
-        error: userError
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
 
-      if (userError || !user) {
-        navigate('/login'); // not logged in
-        return;
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('user_type')
+          .eq('id', user.id)
+          .single();
+
+        if (profile?.user_type === 'store') {
+          setIsStoreUser(true);
+        }
       }
 
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('user_type')
-        .eq('id', user.id)
-        .single();
-
-      if (profileError || !profile) {
-        navigate('/unauthorized'); // optional: show unauthorized message
-        return;
-      }
-
-      if (profile.user_type === 'store_owner') {
-        setIsStore(true);
-      } else {
-        navigate('/unauthorized'); // not a store user
-      }
-
+      // Regardless of auth status, allow access
       setIsLoading(false);
     };
 
     checkRole();
-  }, [navigate]);
-
-  if (isLoading) {
-    return <div className="p-6 text-center">Loading dashboard...</div>;
-  }
-
-  if (!isStore) {
-    return <div className="p-6 text-red-500">Unauthorized access</div>;
-  }
+  }, []);
 
   const handleRefresh = () => {
     setLastRefresh(new Date().toLocaleTimeString());
     window.location.reload();
   };
 
-  // Mock stats - in real app, these would come from API
   const stats = {
     pendingOrders: 4,
     completedToday: 187,
@@ -78,12 +62,16 @@ const StoreDashboard = () => {
     efficiency: 94
   };
 
+  if (isLoading) {
+    return <div className="p-6 text-center">Loading dashboard...</div>;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
       <StoreNavigation onSwitchInterface={function (): void {
         throw new Error('Function not implemented.');
       } } />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8 flex justify-between items-center">
           <div>
@@ -95,6 +83,11 @@ const StoreDashboard = () => {
             <p className="text-xl text-gray-600">
               Real-time order management and delivery monitoring
             </p>
+            {!isStoreUser && (
+              <p className="text-sm text-red-400 mt-2">
+                Viewing as guest — login as store owner for full access
+              </p>
+            )}
           </div>
           <div className="text-right">
             <Button onClick={handleRefresh} className="mb-2 bg-gradient-to-r from-purple-600 to-blue-600">
@@ -152,7 +145,7 @@ const StoreDashboard = () => {
           </Card>
         </div>
 
-        {/* Main Dashboard Tabs */}
+        {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-3 bg-white/80">
             <TabsTrigger value="orders" className="flex items-center space-x-2">
@@ -193,17 +186,17 @@ const StoreDashboard = () => {
           </TabsContent>
         </Tabs>
 
-        {/* Quick Actions Sidebar */}
+        {/* Floating Quick Actions */}
         <div className="fixed bottom-6 right-6 space-y-3">
-          <Button 
+          <Button
             size="lg"
             className="bg-red-500 hover:bg-red-600 shadow-lg rounded-full w-14 h-14 p-0"
             title="Emergency Alert"
           >
             <Bell className="h-6 w-6" />
           </Button>
-          
-          <Button 
+
+          <Button
             size="lg"
             className="bg-blue-500 hover:bg-blue-600 shadow-lg rounded-full w-14 h-14 p-0"
             title="Call Manager"

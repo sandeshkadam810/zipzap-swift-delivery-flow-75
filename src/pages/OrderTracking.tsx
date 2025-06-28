@@ -19,8 +19,6 @@ const OrderTracking = () => {
   const [isLoading, setIsLoading] = useState(true);
     const [isStore, setIsStore] = useState(false);
     
-    // This would normally come from auth context
-    const storeId = 'store-123'; // Mock store ID
   
       const navigate = useNavigate();
   
@@ -47,7 +45,7 @@ const OrderTracking = () => {
           return;
         }
   
-        if (profile.user_type === 'store_owner') {
+        if (profile.user_type === 'store') {
           setIsStore(true);
         } else {
           navigate('/unauthorized'); // not a store user
@@ -59,13 +57,7 @@ const OrderTracking = () => {
       checkRole();
     }, [navigate]);
   
-    if (isLoading) {
-      return <div className="p-6 text-center">Loading dashboard...</div>;
-    }
-  
-    if (!isStore) {
-      return <div className="p-6 text-red-500">Unauthorized access</div>;
-    }
+
 
   const [orders, setOrders] = useState([
     {
@@ -121,6 +113,15 @@ const OrderTracking = () => {
     }
   };
 
+
+      if (isLoading) {
+      return <div className="p-6 text-center">Loading dashboard...</div>;
+    }
+  
+    if (!isStore) {
+      return <div className="p-6 text-red-500">Unauthorized access</div>;
+    }
+    
   const currentOrder = orders.find(o => o.id === selectedOrder);
 
   return (
